@@ -811,7 +811,114 @@
   color: var(--text-secondary);
 }
 
+/* Duration Selector Styles */
+.duration-selector-wrap {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.duration-chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.duration-chip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  outline: none;
+}
+
+.duration-chip:hover:not(.disabled) {
+  border-color: var(--accent-primary);
+  background: rgba(0, 212, 255, 0.06);
+}
+
+.duration-chip.active {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.16), rgba(0, 119, 182, 0.22));
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.25);
+}
+
+.duration-chip.active .dur-title {
+  color: var(--accent-primary);
+  font-weight: 700;
+}
+
+.duration-chip.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.dur-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.90rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dur-subtitle {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
 /* User Contact Fields */
+.phone-input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.phone-country-prefix {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent-primary);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.form-input.phone-field {
+  padding-left: 50px;
+  letter-spacing: 1px;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.phone-char-counter {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin-bottom: 12px;
+  padding-right: 4px;
+}
+
+.phone-char-counter.is-valid {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.phone-char-counter.is-invalid {
+  color: #f87171;
+}
+
 .form-input {
   width: 100%;
   background: rgba(255, 255, 255, 0.04);
@@ -1278,6 +1385,24 @@ textarea.form-input {
 
   .custom-time-picker {
     font-size: 16px;
+  }
+
+  /* Duration Chips Mobile */
+  .duration-chips {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .duration-chip {
+    padding: 8px 6px;
+  }
+
+  .dur-title {
+    font-size: 0.84rem;
+  }
+
+  .dur-subtitle {
+    font-size: 0.64rem;
   }
 
   /* Add-ons Mobile */

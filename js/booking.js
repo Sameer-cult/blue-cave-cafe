@@ -203,12 +203,96 @@ function addBooking(bookingData) {
 
 function isSlotBooked(seatingId, dateKey, time) {
   const bookings = getStoredBookings();
-  return bookings.some(b => b.seatingId === seatingId && b.dateKey === dateKey && b.time === time);
+  return bookings.some(b => {
+    if (b.seatingId !== seatingId || b.dateKey !== dateKey) return false;
+    if (b.time === time) return true;
+    if (b.coveredSlots && Array.isArray(b.coveredSlots) && b.coveredSlots.includes(time)) return true;
+    return false;
+  });
 }
 
 function getBookedSlotsFor(seatingId, dateKey) {
   const bookings = getStoredBookings();
   return bookings.filter(b => b.seatingId === seatingId && b.dateKey === dateKey);
+}
+
+// -------------------------------------------------------------
+// Time & Duration Calculation Helpers
+// -------------------------------------------------------------
+function timeToMinutes(timeStr) {
+  const { hours, minutes } = parseTimeParts(timeStr);
+  return hours * 60 + minutes;
+}
+
+function minutesToTime(totalMinutes) {
+  let normalized = totalMinutes % (24 * 60);
+  let h = Math.floor(normalized / 60);
+  let m = normalized % 60;
+  const period = h >= 12 ? "PM" : "AM";
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+function calculateEndTime(startTimeStr, durationHours) {
+  if (!startTimeStr) return "";
+  const startM = timeToMinutes(startTimeStr);
+  const endM = startM + Math.round(durationHours * 60);
+  return minutesToTime(endM);
+}
+
+// Returns all 30-minute interval slots covered by a booking starting at startTimeStr
+function getIntervalSlots(startTimeStr, durationHours) {
+  if (!startTimeStr) return [];
+  const startM = timeToMinutes(startTimeStr);
+  const totalM = Math.round(durationHours * 60);
+  const slots = [];
+  for (let offset = 0; offset < totalM; offset += 30) {
+    slots.push(minutesToTime(startM + offset));
+  }
+  return slots;
+}
+
+// Validates whether duration is acceptable for a slot:
+// 1. Doesn't exceed cafe closing time (11:00 PM = 23:00 = 1380 mins)
+// 2. Doesn't collide with existing bookings in any intermediate interval
+function validateDurationForSlot(startTimeStr, durationHours, seatingId, dateKey) {
+  if (!startTimeStr) return { valid: true };
+  const startM = timeToMinutes(startTimeStr);
+  const endM = startM + Math.round(durationHours * 60);
+  const closingM = 23 * 60; // 11:00 PM
+
+  // Check closing time
+  if (endM > closingM) {
+    const maxHours = Math.max(0.5, (closingM - startM) / 60);
+    return {
+      valid: false,
+      reason: "closing",
+      maxHours: maxHours,
+      message: `Blue Cave Cafe closes at 11:00 PM. A ${durationHours}-hour booking starting at ${startTimeStr} would end at ${minutesToTime(endM)}. Maximum allowed duration until closing is ${maxHours} hour${maxHours > 1 ? 's' : ''}.`
+    };
+  }
+
+  // Check intermediate slots for collisions
+  const slots = getIntervalSlots(startTimeStr, durationHours);
+  const bookings = getBookedSlotsFor(seatingId, dateKey);
+  for (const sTime of slots) {
+    const isCollision = bookings.some(b => {
+      if (b.time === sTime) return true;
+      if (b.coveredSlots && Array.isArray(b.coveredSlots) && b.coveredSlots.includes(sTime)) return true;
+      return false;
+    });
+    if (isCollision) {
+      return {
+        valid: false,
+        reason: "booked",
+        conflictSlot: sTime,
+        message: `Cannot book for ${durationHours} hours: Slot ${sTime} is already reserved for ${currentBooking.seating.name}. Please choose a shorter duration or pick another time slot.`
+      };
+    }
+  }
+
+  return { valid: true };
 }
 
 // Active State
@@ -217,8 +301,9 @@ let currentBooking = {
   activeFilter: "all",
   activePeriodFilter: "all",
   dateKey: getTodayKey(),
-  formattedDate: formatDisplayDate(new Date()),
+  formattedDate: formatDisplayDate(getNowIST()),
   timeSlot: "07:00 PM",
+  durationHours: 1, // Default approx 1 hour
   addons: [],
   name: "",
   phone: "",
@@ -242,6 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupDatePickers();
   renderTimeSlots();
   setupCustomTimePicker();
+  setupDurationSelector();
   setupAddons();
   setupFormListeners();
   updateHoursBanner();
@@ -540,6 +626,13 @@ function renderTimeSlots() {
       container.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
       slotEl.classList.add("selected");
       currentBooking.timeSlot = slotEl.getAttribute("data-slot-time");
+
+      // Auto-adjust duration if newly picked slot exceeds 11 PM
+      const durVal = validateDurationForSlot(currentBooking.timeSlot, currentBooking.durationHours, currentBooking.seating.id, currentBooking.dateKey);
+      if (!durVal.valid && durVal.maxHours) {
+        currentBooking.durationHours = durVal.maxHours;
+      }
+      updateDurationUI();
       updateSummaryPreview();
     });
   });
@@ -559,6 +652,9 @@ function renderTimeSlots() {
       alert(`Sorry, ${time} is already booked for ${currentBooking.seating.name} on ${currentBooking.formattedDate}.\n\nTo prevent conflicts, no one can book this cabin at the same time. Please select any open slot!`);
     });
   });
+
+  // Refresh duration UI based on currently selected slot
+  updateDurationUI();
 }
 
 // -------------------------------------------------------------
@@ -603,8 +699,71 @@ function setupCustomTimePicker() {
     currentBooking.timeSlot = formatted;
     // Deselect standard preset chips
     document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
+
+    // Auto-adjust duration if needed
+    const durVal = validateDurationForSlot(currentBooking.timeSlot, currentBooking.durationHours, currentBooking.seating.id, currentBooking.dateKey);
+    if (!durVal.valid && durVal.maxHours) {
+      currentBooking.durationHours = durVal.maxHours;
+    }
+    updateDurationUI();
     updateSummaryPreview();
   });
+}
+
+// -------------------------------------------------------------
+// 4B. Table Duration Selector (Approx Hours & Closing Validation)
+// -------------------------------------------------------------
+function setupDurationSelector() {
+  const chips = document.querySelectorAll(".duration-chip");
+  chips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      const hours = parseFloat(chip.getAttribute("data-hours"));
+      const validation = validateDurationForSlot(currentBooking.timeSlot, hours, currentBooking.seating.id, currentBooking.dateKey);
+
+      if (!validation.valid) {
+        alert(validation.message);
+        if (validation.reason === "closing" && validation.maxHours) {
+          setDuration(validation.maxHours);
+        }
+        return;
+      }
+
+      setDuration(hours);
+    });
+  });
+
+  updateDurationUI();
+}
+
+function setDuration(hours) {
+  currentBooking.durationHours = hours;
+  updateDurationUI();
+  updateSummaryPreview();
+}
+
+function updateDurationUI() {
+  const chips = document.querySelectorAll(".duration-chip");
+  const hintEl = document.getElementById("duration-window-hint");
+
+  chips.forEach(chip => {
+    const h = parseFloat(chip.getAttribute("data-hours"));
+    chip.classList.toggle("active", h === currentBooking.durationHours);
+
+    // Check validity of duration chip for current slot
+    if (currentBooking.timeSlot) {
+      const val = validateDurationForSlot(currentBooking.timeSlot, h, currentBooking.seating.id, currentBooking.dateKey);
+      chip.classList.toggle("disabled", !val.valid);
+      chip.title = val.valid ? `Book for approx ${h} hour${h > 1 ? 's' : ''}` : val.message;
+    } else {
+      chip.classList.remove("disabled");
+      chip.title = "";
+    }
+  });
+
+  if (hintEl && currentBooking.timeSlot) {
+    const endT = calculateEndTime(currentBooking.timeSlot, currentBooking.durationHours);
+    hintEl.innerHTML = `<span style="color: var(--accent-primary); font-weight: 600;">${currentBooking.timeSlot} – ${endT}</span> (${currentBooking.durationHours} Hr${currentBooking.durationHours > 1 ? 's' : ''})`;
+  }
 }
 
 // -------------------------------------------------------------
@@ -632,11 +791,13 @@ function setupAddons() {
 }
 
 // -------------------------------------------------------------
-// 6. Form Listeners & Submission
+// 6. Form Listeners & 10-Digit Phone Validation
 // -------------------------------------------------------------
 function setupFormListeners() {
   const nameInput = document.getElementById("booking-name");
   const phoneInput = document.getElementById("booking-phone");
+  const phoneCounter = document.getElementById("phone-char-counter");
+  const phoneStatus = document.getElementById("phone-validation-status");
   const noteInput = document.getElementById("booking-note");
   const submitBtn = document.getElementById("btn-confirm-reservation");
   const closePassBtn = document.getElementById("pass-close-btn");
@@ -644,9 +805,43 @@ function setupFormListeners() {
   if (nameInput) {
     nameInput.addEventListener("input", (e) => { currentBooking.name = e.target.value.trim(); });
   }
+
   if (phoneInput) {
-    phoneInput.addEventListener("input", (e) => { currentBooking.phone = e.target.value.trim(); });
+    phoneInput.addEventListener("input", (e) => {
+      // Strip all non-digit characters and limit strictly to 10 digits
+      let clean = e.target.value.replace(/\D/g, "");
+      if (clean.length > 10) clean = clean.slice(0, 10);
+      e.target.value = clean;
+      currentBooking.phone = clean;
+
+      // Update live digit counter & visual status
+      if (phoneCounter) {
+        const count = clean.length;
+        if (count === 10) {
+          if (/^[6-9]\d{9}$/.test(clean)) {
+            phoneCounter.textContent = "✔ 10 digits valid";
+            phoneCounter.className = "phone-char-counter is-valid";
+            if (phoneStatus) {
+              phoneStatus.innerHTML = `<span style="color: #34d399; font-weight: 600;"><i class="fa-solid fa-check"></i> Valid mobile number</span>`;
+            }
+          } else {
+            phoneCounter.textContent = "⚠ Must start with 6, 7, 8 or 9";
+            phoneCounter.className = "phone-char-counter is-invalid";
+            if (phoneStatus) {
+              phoneStatus.innerHTML = `<span style="color: #f87171;">Must start with 6, 7, 8 or 9</span>`;
+            }
+          }
+        } else {
+          phoneCounter.textContent = `${count} / 10 digits entered`;
+          phoneCounter.className = "phone-char-counter";
+          if (phoneStatus) {
+            phoneStatus.textContent = `${10 - count} more digit${10 - count > 1 ? 's' : ''} needed`;
+          }
+        }
+      }
+    });
   }
+
   if (noteInput) {
     noteInput.addEventListener("input", (e) => { currentBooking.note = e.target.value.trim(); });
   }
@@ -671,8 +866,10 @@ function updateSummaryPreview() {
     summaryTitle.textContent = `${currentBooking.seating.name} (${currentBooking.seating.category})`;
   }
   if (summaryDetails) {
+    const endT = calculateEndTime(currentBooking.timeSlot, currentBooking.durationHours);
     const addonText = currentBooking.addons.length > 0 ? ` • +${currentBooking.addons.length} Add-ons` : '';
-    summaryDetails.textContent = `${currentBooking.formattedDate} • ${currentBooking.timeSlot}${addonText}`;
+    const timeDisplay = currentBooking.timeSlot ? `${currentBooking.timeSlot} – ${endT} (${currentBooking.durationHours} Hr${currentBooking.durationHours > 1 ? 's' : ''})` : 'Time slot needed';
+    summaryDetails.textContent = `${currentBooking.formattedDate} • ${timeDisplay}${addonText}`;
   }
   if (summaryThumb) {
     summaryThumb.src = currentBooking.seating.image;
@@ -692,8 +889,16 @@ function handleBookingSubmit() {
     return;
   }
 
-  if (!phoneInput || !phoneInput.value.trim() || phoneInput.value.trim().length < 8) {
-    alert("Please enter a valid phone number for confirmation.");
+  // Strict 10-Digit Indian Mobile Number Validation
+  const cleanPhone = phoneInput ? phoneInput.value.replace(/\D/g, "") : "";
+  if (!cleanPhone || cleanPhone.length !== 10) {
+    alert(`Please enter a complete 10-digit mobile number.\n\nYou have entered ${cleanPhone.length} digit${cleanPhone.length === 1 ? '' : 's'}.`);
+    if (phoneInput) phoneInput.focus();
+    return;
+  }
+
+  if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+    alert("Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9 (e.g. 9876543210).");
     if (phoneInput) phoneInput.focus();
     return;
   }
@@ -705,6 +910,13 @@ function handleBookingSubmit() {
     return;
   }
 
+  // Validate duration: check closing time & intermediate slot conflicts
+  const durVal = validateDurationForSlot(currentBooking.timeSlot, currentBooking.durationHours, currentBooking.seating.id, currentBooking.dateKey);
+  if (!durVal.valid) {
+    alert(durVal.message);
+    return;
+  }
+
   // Double check if time slot was taken
   if (isSlotBooked(currentBooking.seating.id, currentBooking.dateKey, currentBooking.timeSlot)) {
     alert(`Sorry! ${currentBooking.timeSlot} on ${currentBooking.formattedDate} is already booked. Please choose an available time.`);
@@ -713,21 +925,27 @@ function handleBookingSubmit() {
   }
 
   currentBooking.name = nameInput.value.trim();
-  currentBooking.phone = phoneInput.value.trim();
+  currentBooking.phone = cleanPhone;
   currentBooking.refId = generateRefId();
 
-  // Save into local booking registry
+  const endT = calculateEndTime(currentBooking.timeSlot, currentBooking.durationHours);
+  const covered = getIntervalSlots(currentBooking.timeSlot, currentBooking.durationHours);
+
+  // Save into local booking registry with covered interval slots
   addBooking({
     seatingId: currentBooking.seating.id,
     seatingName: currentBooking.seating.name,
     dateKey: currentBooking.dateKey,
     time: currentBooking.timeSlot,
+    endTime: endT,
+    durationHours: currentBooking.durationHours,
+    coveredSlots: covered,
     name: currentBooking.name,
     phone: currentBooking.phone,
     refId: currentBooking.refId
   });
 
-  // Re-render floor plan & time slots so newly booked slot turns into red "Booked"
+  // Re-render floor plan & time slots so all covered slots turn into red "Booked"
   renderFloorPlan();
   renderTimeSlots();
 
@@ -735,14 +953,14 @@ function handleBookingSubmit() {
   document.getElementById("pass-ref-id").textContent = currentBooking.refId;
   document.getElementById("pass-guest-name").textContent = currentBooking.name;
   document.getElementById("pass-seating").textContent = `${currentBooking.seating.name} • ${currentBooking.seating.category}`;
-  document.getElementById("pass-date-time").textContent = `${currentBooking.formattedDate} at ${currentBooking.timeSlot}`;
+  document.getElementById("pass-date-time").textContent = `${currentBooking.formattedDate} • ${currentBooking.timeSlot} – ${endT} (${currentBooking.durationHours} Hr${currentBooking.durationHours > 1 ? 's' : ''})`;
   
   const addonsDisplay = currentBooking.addons.length > 0 ? currentBooking.addons.join(", ") : "Standard Dining Experience";
   document.getElementById("pass-addons").textContent = addonsDisplay;
 
   // Build WhatsApp URL
   const feastText = window.getSelectedFeastSummary ? window.getSelectedFeastSummary() : "";
-  const waMsg = buildWhatsAppMessage(feastText);
+  const waMsg = buildWhatsAppMessage(feastText, endT);
   const waUrl = `https://wa.me/${CAFE_PHONE}?text=${encodeURIComponent(waMsg)}`;
   
   const waLinkBtn = document.getElementById("pass-whatsapp-btn");
@@ -753,7 +971,7 @@ function handleBookingSubmit() {
   // Update QR Code
   const qrImg = document.getElementById("pass-qr-image");
   if (qrImg) {
-    const qrData = `BLUECAVE-RES-${currentBooking.refId}-${encodeURIComponent(currentBooking.name)}-${currentBooking.timeSlot}`;
+    const qrData = `BLUECAVE-RES-${currentBooking.refId}-${encodeURIComponent(currentBooking.name)}-${currentBooking.timeSlot}-${currentBooking.durationHours}H`;
     qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${qrData}`;
   }
 
@@ -780,14 +998,16 @@ function handleBookingSubmit() {
 // -------------------------------------------------------------
 // 8. Build WhatsApp Notification Message sent to Cafe Owner (6307-693972)
 // -------------------------------------------------------------
-function buildWhatsAppMessage(feastSummary) {
+function buildWhatsAppMessage(feastSummary, endT) {
+  const endTimeFormatted = endT || calculateEndTime(currentBooking.timeSlot, currentBooking.durationHours);
+
   let msg = `*NEW TABLE / CABIN RESERVATION*\n`;
   msg += `*Blue Cave Cafe Kanpur*\n\n`;
   msg += `🎫 *Booking Reference:* ${currentBooking.refId}\n`;
   msg += `👤 *Guest Name:* ${currentBooking.name}\n`;
-  msg += `📞 *Contact Number:* ${currentBooking.phone}\n`;
+  msg += `📞 *Contact Number:* +91 ${currentBooking.phone}\n`;
   msg += `📅 *Date:* ${currentBooking.formattedDate}\n`;
-  msg += `⏰ *Time Slot:* ${currentBooking.timeSlot}\n`;
+  msg += `⏰ *Time & Duration:* ${currentBooking.timeSlot} – ${endTimeFormatted} (Approx ${currentBooking.durationHours} Hour${currentBooking.durationHours > 1 ? 's' : ''})\n`;
   msg += `📍 *Selected Option:* ${currentBooking.seating.name} (${currentBooking.seating.category})\n`;
   
   if (currentBooking.addons.length > 0) {

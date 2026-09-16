@@ -329,6 +329,32 @@
                     <span class="custom-time-hint">11:00 AM – 11:00 PM</span>
                   </div>
                 </div>
+
+                <!-- Approx Duration (Hours) Selector -->
+                <div class="duration-selector-wrap">
+                  <div class="field-label">
+                    <span><i class="fa-solid fa-hourglass-half"></i> Table Duration (Approx Hours)</span>
+                    <span class="field-label-hint" id="duration-window-hint">1 Hour (Until 11:00 PM)</span>
+                  </div>
+                  <div class="duration-chips" id="duration-chips">
+                    <button type="button" class="duration-chip active" data-hours="1">
+                      <span class="dur-title">1 Hour</span>
+                      <span class="dur-subtitle">Coffee & Pasta</span>
+                    </button>
+                    <button type="button" class="duration-chip" data-hours="1.5">
+                      <span class="dur-title">1.5 Hours</span>
+                      <span class="dur-subtitle">Dinner & Bites</span>
+                    </button>
+                    <button type="button" class="duration-chip" data-hours="2">
+                      <span class="dur-title">2 Hours</span>
+                      <span class="dur-subtitle">Date / Celebration</span>
+                    </button>
+                    <button type="button" class="duration-chip" data-hours="3">
+                      <span class="dur-title">3 Hours</span>
+                      <span class="dur-subtitle">Games & Parties</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -379,10 +405,14 @@
               <div class="booking-field-group">
                 <div class="field-label">
                   <span><i class="fa-regular fa-user"></i> Your Contact Details</span>
-                  <span class="field-label-hint">For instant confirmation</span>
+                  <span class="field-label-hint" id="phone-validation-status">Exact 10 digits required</span>
                 </div>
                 <input type="text" id="booking-name" class="form-input" placeholder="Your Name *" required>
-                <input type="tel" id="booking-phone" class="form-input" placeholder="Mobile / WhatsApp Number *" required>
+                <div class="phone-input-wrapper">
+                  <span class="phone-country-prefix">+91</span>
+                  <input type="tel" id="booking-phone" class="form-input phone-field" placeholder="10-Digit Mobile / WhatsApp *" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" required>
+                </div>
+                <div class="phone-char-counter" id="phone-char-counter">0 / 10 digits entered</div>
                 <textarea id="booking-note" class="form-input" placeholder="Special Request / Celebration Note (e.g. Date with Priya, Birthday Celebration)"></textarea>
               </div>
             </div>
