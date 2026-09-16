@@ -11,7 +11,6 @@ const MENU_ITEMS = [
     category: "pastas",
     name: "Classic White Sauce Alfredo Penne",
     desc: "Creamy garlic butter blend, Italian herbs, sautéed sweet corn & mushrooms with aged parmesan. (Customer #1 Favorite)",
-    price: 180,
     isVeg: true,
     isPopular: true,
     tag: "Signature Bestseller"
@@ -21,7 +20,6 @@ const MENU_ITEMS = [
     category: "pastas",
     name: "Fiery Arrabbiata Red Sauce Pasta",
     desc: "Tangy slow-cooked San Marzano style tomato salsa, spicy chili flakes, bell peppers & black olives.",
-    price: 170,
     isVeg: true,
     isPopular: false,
     tag: "Spicy Italian"
@@ -31,7 +29,6 @@ const MENU_ITEMS = [
     category: "pastas",
     name: "Blue Cave Special Pink Rosa Pasta",
     desc: "The ultimate harmony of rich alfredo cheese & zesty tomato marinara topped with melting mozzarella.",
-    price: 190,
     isVeg: true,
     isPopular: true,
     tag: "Chef Special"
@@ -43,7 +40,6 @@ const MENU_ITEMS = [
     category: "pizzas",
     name: "Paneer Tikka Supreme Cave Pizza",
     desc: "Charred marinated paneer, diced capsicum, red onions, mozzarella overload & tandoori drizzle.",
-    price: 240,
     isVeg: true,
     isPopular: true,
     tag: "Popular Choice"
@@ -53,7 +49,6 @@ const MENU_ITEMS = [
     category: "pizzas",
     name: "Classic Italian Margherita",
     desc: "Thin-crust stone baked sourdough base, rich tomato concasse, melted mozzarella & fresh basil.",
-    price: 180,
     isVeg: true,
     isPopular: false,
     tag: "Authentic"
@@ -63,7 +58,6 @@ const MENU_ITEMS = [
     category: "pizzas",
     name: "Farmhouse Veggie Overload",
     desc: "Golden corn, tender mushrooms, green peppers, black olives, jalapenos and extra cheese blend.",
-    price: 220,
     isVeg: true,
     isPopular: true,
     tag: "Loaded"
@@ -75,7 +69,6 @@ const MENU_ITEMS = [
     category: "shakes",
     name: "Legendary KitKat Freakshake",
     desc: "Loaded chocolate shake layered with crushed KitKat bars, chocolate swirl, vanilla cream & chocolate wafer.",
-    price: 160,
     isVeg: true,
     isPopular: true,
     tag: "Must Try"
@@ -85,7 +78,6 @@ const MENU_ITEMS = [
     category: "shakes",
     name: "Oreo Overload Mudslide Shake",
     desc: "Dark chocolate fudge blended with crunchy Oreos, topped with whipped cream and cookie crunch.",
-    price: 150,
     isVeg: true,
     isPopular: false,
     tag: "Chocolate Lover"
@@ -95,7 +87,6 @@ const MENU_ITEMS = [
     category: "shakes",
     name: "Handcrafted Cold Coffee Float",
     desc: "Fresh pulled double-shot espresso blended with chilled milk and topped with creamy vanilla ice cream.",
-    price: 130,
     isVeg: true,
     isPopular: true,
     tag: "Crowd Favorite"
@@ -107,7 +98,6 @@ const MENU_ITEMS = [
     category: "drinks",
     name: "Blue Cave Ocean Curacao Mojito",
     desc: "Signature electric blue refresher with lemon zest, fresh mint leaves, cane sugar & sparkling soda.",
-    price: 140,
     isVeg: true,
     isPopular: true,
     tag: "Cafe Signature"
@@ -117,7 +107,6 @@ const MENU_ITEMS = [
     category: "drinks",
     name: "Classic Fresh Mint Mojito",
     desc: "Muddled fresh garden mint, juicy lime wedges, brown sugar syrup and ice cold effervescent fizz.",
-    price: 120,
     isVeg: true,
     isPopular: false,
     tag: "Refreshing"
@@ -127,7 +116,6 @@ const MENU_ITEMS = [
     category: "drinks",
     name: "Crisp Green Apple Sparkler",
     desc: "Tart green apple essence, tangy citrus squeeze and fizzy sparkling soda with crushed ice.",
-    price: 130,
     isVeg: true,
     isPopular: false,
     tag: "Tangy Chill"
@@ -139,7 +127,6 @@ const MENU_ITEMS = [
     category: "bites",
     name: "Cheesy Peri-Peri Loaded Fries",
     desc: "Golden crispy skin-on potato fries dusted in spicy peri-peri seasoning and drenched in melted cheese sauce.",
-    price: 130,
     isVeg: true,
     isPopular: true,
     tag: "Bestseller"
@@ -149,7 +136,6 @@ const MENU_ITEMS = [
     category: "bites",
     name: "Crispy Cottage Cheese Burger",
     desc: "Crispy coated paneer patty, chipotle aioli, iceberg lettuce, tomatoes & onions in a toasted brioche bun.",
-    price: 140,
     isVeg: true,
     isPopular: false,
     tag: "Hearty Snack"
@@ -159,7 +145,6 @@ const MENU_ITEMS = [
     category: "bites",
     name: "Nachos Grande with Cheesy Salsa",
     desc: "Crunchy corn tortilla chips served with spicy salsa dip, sour cream and melted cheddar cheese drizzle.",
-    price: 150,
     isVeg: true,
     isPopular: true,
     tag: "Perfect with Games"
@@ -255,7 +240,7 @@ function renderMenu(category = "all") {
           <p class="menu-item-desc">${item.desc}</p>
         </div>
         <div class="menu-card-bottom">
-          <span class="menu-item-price">₹${item.price}</span>
+          <span class="menu-item-badge"><i class="fa-solid fa-utensils"></i> Add to Table</span>
           <button class="add-feast-btn" onclick="addToFeast('${item.id}')" title="Add to table wishlist">
             ${qty > 0 ? `<b>${qty}</b>` : `+`}
           </button>
@@ -290,24 +275,19 @@ window.addToFeast = function(itemId) {
 function updateFeastBar() {
   const bar = document.getElementById("feast-summary-bar");
   const countEl = document.getElementById("feast-item-count");
-  const totalEl = document.getElementById("feast-total-price");
 
   let totalCount = 0;
-  let totalPrice = 0;
-
   Object.entries(selectedFeast).forEach(([id, qty]) => {
     const item = MENU_ITEMS.find(m => m.id === id);
     if (item && qty > 0) {
       totalCount += qty;
-      totalPrice += (item.price * qty);
     }
   });
 
-  if (bar && countEl && totalEl) {
+  if (bar && countEl) {
     if (totalCount > 0) {
       bar.classList.add("active");
       countEl.textContent = `${totalCount} item${totalCount > 1 ? 's' : ''} in Feast Wishlist`;
-      totalEl.textContent = `Est. ₹${totalPrice}`;
     } else {
       bar.classList.remove("active");
     }
@@ -317,18 +297,15 @@ function updateFeastBar() {
 // Helper to export feast summary to booking WhatsApp message
 window.getSelectedFeastSummary = function() {
   let summary = [];
-  let totalPrice = 0;
 
   Object.entries(selectedFeast).forEach(([id, qty]) => {
     const item = MENU_ITEMS.find(m => m.id === id);
     if (item && qty > 0) {
-      summary.push(`• ${qty}x ${item.name} (₹${item.price * qty})`);
-      totalPrice += (item.price * qty);
+      summary.push(`• ${qty}x ${item.name}`);
     }
   });
 
   if (summary.length === 0) return "";
-  summary.push(`Total Food Est: ₹${totalPrice}`);
   return summary.join("\n");
 };
 

@@ -15,7 +15,7 @@ Official responsive website & interactive table/cabin booking system for **Blue 
 3. **VIP Digital Reservation Pass with QR Code**: Generates an animated pass with unique booking ID (e.g. `#BCC-4829`) and scan-ready QR code.
 4. **Direct WhatsApp Reservation Integration**: 1-Click WhatsApp button that pre-fills the guest's name, date, time slot, cabin, and add-ons and dispatches directly to **+91 63076 93972**.
 5. **Interactive Mood Lighting Switcher**: Visitors can toggle the cafe's atmosphere in real time between Electric Blue, Romantic Candlelight Amber, and Cyber Neon Violet.
-6. **"Build Your Cave Feast" Table Wishlist**: Interactive menu filter with 3D tilt cards and live bill estimator.
+6. **"Build Your Cave Feast" Table Wishlist**: Interactive menu filter with 3D tilt cards and pre-selected dish wishlist.
 7. **Real Google Maps Photos**: Authentic photography extracted directly from their verified Google Maps listing and store presence.
 8. **Real-Time Kanpur Status**: Automatically detects if the cafe is currently open or closed based on Indian Standard Time (11:00 AM – 11:00 PM).
 
