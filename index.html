@@ -662,6 +662,60 @@
     </section>
   </main>
 
+  <!-- Quick View Modal -->
+  <div class="modal-backdrop" id="quick-view-modal">
+    <div class="modal-content">
+      <button class="modal-close-btn" id="modal-close-btn" aria-label="Close modal">✕</button>
+      <div class="modal-body">
+        <div class="modal-image-container">
+          <div class="modal-image-placeholder"><i class="fa-solid fa-mug-hot"></i></div>
+        </div>
+        <div class="modal-details">
+          <h3 id="modal-item-title">Item Name</h3>
+          <p id="modal-item-desc">Item description goes here.</p>
+
+          <div class="modal-options">
+            <div class="option-group" id="size-options-group">
+              <label>Size</label>
+              <div class="option-chips">
+                <button class="option-chip active" data-price="0">Regular</button>
+                <button class="option-chip" data-price="40">Large (+₹40)</button>
+              </div>
+            </div>
+
+            <div class="option-group" id="milk-options-group">
+              <label>Milk Choice</label>
+              <div class="option-chips">
+                <button class="option-chip active" data-price="0">Whole Milk</button>
+                <button class="option-chip" data-price="30">Almond Milk (+₹30)</button>
+                <button class="option-chip" data-price="30">Oat Milk (+₹30)</button>
+              </div>
+            </div>
+
+            <div class="option-group" id="sweetness-options-group">
+              <label>Sweetness</label>
+              <div class="option-chips">
+                <button class="option-chip" data-price="0">0%</button>
+                <button class="option-chip" data-price="0">50%</button>
+                <button class="option-chip active" data-price="0">100%</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <div class="modal-price">
+              <span>Total Price: </span>
+              <strong id="modal-total-price">₹250</strong>
+            </div>
+            <button class="btn btn-primary" id="modal-add-to-feast">
+              <i class="fa-solid fa-plus"></i> Add to Wishlist
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Floating Table Feast Wishlist Bar -->
   <div class="feast-summary-bar" id="feast-summary-bar">
     <div class="feast-info">
@@ -813,6 +867,9 @@
       <p>Created for Blue Cave Cafe, Saket Nagar, Kanpur.</p>
     </div>
   </footer>
+
+  <!-- Toast Notifications Container -->
+  <div id="toast-container"></div>
 
   <!-- Scripts -->
   <script src="js/booking.js"></script>
