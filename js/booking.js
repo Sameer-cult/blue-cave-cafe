@@ -1,14 +1,17 @@
 /**
  * BLUE CAVE CAFE — Booking Engine Logic
  * Exactly 3 Cabins (Cabin A, B, C) & 3 Tables (Table 1, 2, 3)
- * Simplified reservation: Pick Date -> Pick Cabin/Table -> Pick Slot -> WhatsApp Direct Notification
+ * Free Date & Time Selection (11:00 AM – 11:00 PM)
+ * Real-time Booked vs Available Schedule Tracking
+ * Direct WhatsApp Notification to Cafe Owner (6307-693972)
  */
 
 const CAFE_PHONE = "916307693972"; // 6307-693972 formatted for WhatsApp API
+const BOOKING_STORAGE_KEY = "blue_cave_bookings_v3";
 
-// Seating Inventory: Exactly 3 Cave Cabins & 3 Cafe Tables
+// Seating Inventory: Exactly 3 Themed Cave Cabins & 3 Cafe Tables
 const SEATING_INVENTORY = [
-  // 3 Cave Cabins
+  // 3 Themed Cave Cabins
   {
     id: "cabin-a",
     name: "Cabin A",
@@ -73,32 +76,114 @@ const SEATING_INVENTORY = [
   }
 ];
 
-// Time Slots with Live Availability States
+// Full Day 30-Minute Time Slots throughout Cafe Hours (11:00 AM - 11:00 PM)
 const TIME_SLOTS = [
-  // Lunch (11:30 AM - 2:30 PM)
-  { time: "11:30 AM", period: "afternoon", status: "Available", statusClass: "available" },
-  { time: "12:30 PM", period: "afternoon", status: "Available", statusClass: "available" },
-  { time: "01:30 PM", period: "afternoon", status: "Filling Fast", statusClass: "filling" },
-  { time: "02:30 PM", period: "afternoon", status: "Available", statusClass: "available" },
+  // Lunch (11:00 AM - 03:30 PM)
+  { time: "11:00 AM", period: "afternoon" },
+  { time: "11:30 AM", period: "afternoon" },
+  { time: "12:00 PM", period: "afternoon" },
+  { time: "12:30 PM", period: "afternoon" },
+  { time: "01:00 PM", period: "afternoon" },
+  { time: "01:30 PM", period: "afternoon" },
+  { time: "02:00 PM", period: "afternoon" },
+  { time: "02:30 PM", period: "afternoon" },
+  { time: "03:00 PM", period: "afternoon" },
+  { time: "03:30 PM", period: "afternoon" },
 
-  // Sunset & High Tea (4:00 PM - 6:00 PM)
-  { time: "04:00 PM", period: "sunset", status: "Filling Fast", statusClass: "filling" },
-  { time: "05:00 PM", period: "sunset", status: "1 Left", statusClass: "filling" },
-  { time: "06:00 PM", period: "sunset", status: "Available", statusClass: "available" },
+  // Evening & Sunset (04:00 PM - 06:30 PM)
+  { time: "04:00 PM", period: "sunset" },
+  { time: "04:30 PM", period: "sunset" },
+  { time: "05:00 PM", period: "sunset" },
+  { time: "05:30 PM", period: "sunset" },
+  { time: "06:00 PM", period: "sunset" },
+  { time: "06:30 PM", period: "sunset" },
 
-  // Evening & Night Cave Ambiance (7:00 PM - 10:00 PM)
-  { time: "07:00 PM", period: "night", status: "Filling Fast", statusClass: "filling" },
-  { time: "08:00 PM", period: "night", status: "1 Left", statusClass: "filling" },
-  { time: "09:00 PM", period: "night", status: "Filling Fast", statusClass: "filling" },
-  { time: "10:00 PM", period: "night", status: "Available", statusClass: "available" }
+  // Night Ambiance (07:00 PM - 10:30 PM)
+  { time: "07:00 PM", period: "night" },
+  { time: "07:30 PM", period: "night" },
+  { time: "08:00 PM", period: "night" },
+  { time: "08:30 PM", period: "night" },
+  { time: "09:00 PM", period: "night" },
+  { time: "09:30 PM", period: "night" },
+  { time: "10:00 PM", period: "night" },
+  { time: "10:30 PM", period: "night" }
 ];
+
+// Helpers for date keys (YYYY-MM-DD)
+function getDateKey(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getTodayKey() {
+  return getDateKey(new Date());
+}
+
+function getTomorrowKey() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return getDateKey(d);
+}
+
+// -------------------------------------------------------------
+// Booking Registry (Local Persistence + Realistic Pre-seeded Slots)
+// -------------------------------------------------------------
+function getStoredBookings() {
+  try {
+    const raw = localStorage.getItem(BOOKING_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+
+  // Pre-seed realistic sample bookings for Today and Tomorrow so visitors immediately see the booked schedule in action
+  const todayKey = getTodayKey();
+  const tomorrowKey = getTomorrowKey();
+
+  const seed = [
+    { seatingId: "cabin-a", dateKey: todayKey, time: "01:30 PM", name: "Rohan S.", refId: "BCC-4812" },
+    { seatingId: "cabin-a", dateKey: todayKey, time: "08:00 PM", name: "Ananya M.", refId: "BCC-7231" },
+    { seatingId: "cabin-b", dateKey: todayKey, time: "07:00 PM", name: "Vikram G.", refId: "BCC-3190" },
+    { seatingId: "cabin-c", dateKey: todayKey, time: "08:30 PM", name: "Birthday Bash", refId: "BCC-9024" },
+    { seatingId: "table-2", dateKey: todayKey, time: "05:00 PM", name: "Game Squad", refId: "BCC-6120" },
+    // Tomorrow
+    { seatingId: "cabin-a", dateKey: tomorrowKey, time: "07:30 PM", name: "Priya V.", refId: "BCC-8311" },
+    { seatingId: "cabin-c", dateKey: tomorrowKey, time: "09:00 PM", name: "Karan D.", refId: "BCC-5520" }
+  ];
+
+  saveBookings(seed);
+  return seed;
+}
+
+function saveBookings(bookings) {
+  try {
+    localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(bookings));
+  } catch (e) {}
+}
+
+function addBooking(bookingData) {
+  const bookings = getStoredBookings();
+  bookings.push(bookingData);
+  saveBookings(bookings);
+}
+
+function isSlotBooked(seatingId, dateKey, time) {
+  const bookings = getStoredBookings();
+  return bookings.some(b => b.seatingId === seatingId && b.dateKey === dateKey && b.time === time);
+}
+
+function getBookedSlotsFor(seatingId, dateKey) {
+  const bookings = getStoredBookings();
+  return bookings.filter(b => b.seatingId === seatingId && b.dateKey === dateKey);
+}
 
 // Active State
 let currentBooking = {
   seating: SEATING_INVENTORY[0], // Defaults to Cabin A
   activeFilter: "all",
-  date: "Today",
-  formattedDate: getTodayFormatted(),
+  activePeriodFilter: "all",
+  dateKey: getTodayKey(),
+  formattedDate: formatDisplayDate(new Date()),
   timeSlot: "07:00 PM",
   addons: [],
   name: "",
@@ -107,9 +192,9 @@ let currentBooking = {
   refId: generateRefId()
 };
 
-function getTodayFormatted() {
+function formatDisplayDate(dateObj) {
   const options = { day: 'numeric', month: 'short', year: 'numeric' };
-  return new Date().toLocaleDateString('en-IN', options);
+  return dateObj.toLocaleDateString('en-IN', options);
 }
 
 function generateRefId() {
@@ -120,14 +205,48 @@ function generateRefId() {
 document.addEventListener("DOMContentLoaded", () => {
   renderFloorPlan();
   initZoneFilters();
-  renderDateChips();
-  renderTimeSlots("night");
+  setupDatePickers();
+  renderTimeSlots();
+  setupCustomTimePicker();
   setupAddons();
   setupFormListeners();
+  updateHoursBanner();
   updateSummaryPreview();
+
+  // Keep hours banner fresh
+  setInterval(updateHoursBanner, 60000);
 });
 
-// 1. Render Floor Plan Grid (3 Cabins & 3 Tables)
+// -------------------------------------------------------------
+// Cafe Operating Hours & Real-Time Open/Closed Status
+// -------------------------------------------------------------
+function updateHoursBanner() {
+  const badge = document.getElementById("booking-open-badge");
+  const textEl = document.getElementById("booking-open-text");
+  if (!badge || !textEl) return;
+
+  // Indian Standard Time
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const istTime = new Date(utc + (3600000 * 5.5));
+  const hours = istTime.getHours();
+
+  // 11:00 AM (11) to 11:00 PM (23)
+  const isOpen = (hours >= 11 && hours < 23);
+
+  if (isOpen) {
+    badge.className = "hours-banner-badge is-open";
+    textEl.innerHTML = `<span class="status-pulse-dot"></span> <b>OPEN NOW</b> • Closes at 11:00 PM`;
+  } else {
+    badge.className = "hours-banner-badge is-closed";
+    const opensAt = hours < 11 ? "Opens Today at 11:00 AM" : "Opens Tomorrow at 11:00 AM";
+    textEl.innerHTML = `<span class="dot-closed"></span> <b>CLOSED NOW</b> • ${opensAt}`;
+  }
+}
+
+// -------------------------------------------------------------
+// 1. Floor Plan Grid (3 Cabins & 3 Tables)
+// -------------------------------------------------------------
 function renderFloorPlan() {
   const container = document.getElementById("floorplan-grid");
   if (!container) return;
@@ -138,41 +257,48 @@ function renderFloorPlan() {
 
   container.innerHTML = items.map((seat) => {
     const isSelected = seat.id === currentBooking.seating.id;
+    const bookedOnDate = getBookedSlotsFor(seat.id, currentBooking.dateKey);
+    const bookedCount = bookedOnDate.length;
+
     return `
-      <div class="floor-booth ${seat.type === 'cabin' ? 'is-cabin' : 'is-table'} ${isSelected ? 'selected' : ''}" data-seat-id="${seat.id}">
+      <div class="floor-booth ${seat.type === 'cabin' ? 'is-cabin' : 'is-table'} ${isSelected ? 'selected' : ''}" 
+           data-seat-id="${seat.id}">
         <div>
           <div class="booth-badge-row">
-            <span class="booth-badge ${seat.badgeClass}">${seat.badge}</span>
-            <span class="booth-type-tag">${seat.type === 'cabin' ? '✨ Cave Ambiance' : '☕ Social Zone'}</span>
+            <span class="booth-badge ${seat.badgeClass}">★ ${seat.badge}</span>
+            <span class="booth-type-tag" style="color: ${bookedCount > 0 ? '#f87171' : '#34d399'};">
+              ${bookedCount > 0 ? `🔴 ${bookedCount} Booked` : `🟢 All Free`}
+            </span>
           </div>
           <h4 class="booth-name">${seat.name}</h4>
           <p class="booth-desc">${seat.desc}</p>
         </div>
         <div class="booth-footer">
-          <span>${seat.category}</span>
-          <span style="color: ${isSelected ? '#10b981' : 'var(--accent-primary)'}; font-weight: 700;">
-            ${isSelected ? '✓ Selected' : 'Tap to Pick'}
+          <div class="booth-capacity">
+            <i class="fa-solid fa-sparkles"></i> Themed Atmosphere
+          </div>
+          <span style="font-weight: 700; color: ${isSelected ? '#10b981' : 'var(--accent-primary)'};">
+            ${isSelected ? '✓ Selected' : 'Tap to Select'}
           </span>
         </div>
       </div>
     `;
   }).join("");
 
-  // Attach click events
   container.querySelectorAll(".floor-booth").forEach(boothEl => {
     boothEl.addEventListener("click", () => {
       const seatId = boothEl.getAttribute("data-seat-id");
-      const seat = SEATING_INVENTORY.find(s => s.id === seatId);
-      if (seat) {
-        currentBooking.seating = seat;
+      const found = SEATING_INVENTORY.find(s => s.id === seatId);
+      if (found) {
+        currentBooking.seating = found;
         renderFloorPlan();
+        renderTimeSlots();
         updateSummaryPreview();
       }
     });
   });
 }
 
-// Zone Filter Tabs: All (6) | Cabins (3) | Tables (3)
 function initZoneFilters() {
   const filterBtns = document.querySelectorAll(".zone-filter-btn");
   filterBtns.forEach(btn => {
@@ -185,59 +311,91 @@ function initZoneFilters() {
   });
 }
 
-// 2. Render Date Chips
-function renderDateChips() {
+// -------------------------------------------------------------
+// 2. Free Date Selection (Quick Chips + Unlimited Date Picker)
+// -------------------------------------------------------------
+function setupDatePickers() {
   const chipsContainer = document.getElementById("date-chips");
   const dateInput = document.getElementById("custom-date-picker");
-  if (!chipsContainer) return;
+  const dateDisplay = document.getElementById("selected-date-display");
 
+  // Set min date to today
   const today = new Date();
+  const todayKey = getTodayKey();
+  if (dateInput) {
+    dateInput.min = todayKey;
+    dateInput.value = todayKey;
+  }
+
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-
-  const dayAfter = new Date(today);
-  dayAfter.setDate(today.getDate() + 2);
 
   const weekend = getNextWeekend();
 
   const dates = [
-    { label: "Today", dateObj: today },
-    { label: "Tomorrow", dateObj: tomorrow },
-    { label: "Day After", dateObj: dayAfter },
-    { label: "Weekend", dateObj: weekend }
+    { label: "Today", dateObj: today, key: todayKey },
+    { label: "Tomorrow", dateObj: tomorrow, key: getDateKey(tomorrow) },
+    { label: "Weekend", dateObj: weekend, key: getDateKey(weekend) }
   ];
 
-  chipsContainer.innerHTML = dates.map((d, idx) => {
-    const isSel = idx === 0;
-    const dayName = d.dateObj.toLocaleDateString('en-IN', { weekday: 'short' });
-    const dayDate = d.dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  if (chipsContainer) {
+    chipsContainer.innerHTML = dates.map((d, idx) => {
+      const isSel = d.key === currentBooking.dateKey;
+      const dayName = d.dateObj.toLocaleDateString('en-IN', { weekday: 'short' });
+      const dayDate = d.dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 
-    return `
-      <div class="date-chip ${isSel ? 'selected' : ''}" data-date="${dayDate}">
-        <span class="day">${d.label} (${dayName})</span>
-        <span class="date-str">${dayDate}</span>
-      </div>
-    `;
-  }).join("");
+      return `
+        <div class="date-chip ${isSel ? 'selected' : ''}" data-date-key="${d.key}" data-display="${d.label} (${dayDate})">
+          <span class="day">${d.label} (${dayName})</span>
+          <span class="date-str">${dayDate}</span>
+        </div>
+      `;
+    }).join("");
 
-  chipsContainer.querySelectorAll(".date-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      chipsContainer.querySelectorAll(".date-chip").forEach(c => c.classList.remove("selected"));
-      chip.classList.add("selected");
-      currentBooking.formattedDate = chip.getAttribute("data-date");
-      if (dateInput) dateInput.value = "";
-      updateSummaryPreview();
+    chipsContainer.querySelectorAll(".date-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        chipsContainer.querySelectorAll(".date-chip").forEach(c => c.classList.remove("selected"));
+        chip.classList.add("selected");
+
+        currentBooking.dateKey = chip.getAttribute("data-date-key");
+        const parts = currentBooking.dateKey.split("-");
+        const dObj = new Date(parts[0], parts[1] - 1, parts[2]);
+        currentBooking.formattedDate = formatDisplayDate(dObj);
+
+        if (dateInput) dateInput.value = currentBooking.dateKey;
+        if (dateDisplay) dateDisplay.textContent = chip.getAttribute("data-display");
+
+        renderFloorPlan();
+        renderTimeSlots();
+        updateSummaryPreview();
+      });
     });
-  });
+  }
 
+  // Native Date Picker listener: allows user to pick ANY future date freely!
   if (dateInput) {
     dateInput.addEventListener("change", (e) => {
-      if (e.target.value) {
-        chipsContainer.querySelectorAll(".date-chip").forEach(c => c.classList.remove("selected"));
-        const picked = new Date(e.target.value);
-        currentBooking.formattedDate = picked.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-        updateSummaryPreview();
+      if (!e.target.value) return;
+
+      currentBooking.dateKey = e.target.value;
+      const parts = currentBooking.dateKey.split("-");
+      const dObj = new Date(parts[0], parts[1] - 1, parts[2]);
+      currentBooking.formattedDate = formatDisplayDate(dObj);
+
+      // Deselect quick chips if custom date
+      if (chipsContainer) {
+        chipsContainer.querySelectorAll(".date-chip").forEach(c => {
+          c.classList.toggle("selected", c.getAttribute("data-date-key") === currentBooking.dateKey);
+        });
       }
+
+      if (dateDisplay) {
+        dateDisplay.textContent = dObj.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+      }
+
+      renderFloorPlan();
+      renderTimeSlots();
+      updateSummaryPreview();
     });
   }
 }
@@ -249,30 +407,59 @@ function getNextWeekend() {
   return new Date(d.setDate(diff));
 }
 
-// 3. Render Time Slots
-function renderTimeSlots(periodFilter = "night") {
+// -------------------------------------------------------------
+// 3. Time Slots & Live Booked Schedule Engine
+// -------------------------------------------------------------
+function renderTimeSlots() {
   const container = document.getElementById("slots-grid");
   const tabBtns = document.querySelectorAll(".slot-cat-btn");
   if (!container) return;
 
-  const filtered = TIME_SLOTS.filter(s => periodFilter === "all" || s.period === periodFilter);
+  const bookedList = getBookedSlotsFor(currentBooking.seating.id, currentBooking.dateKey);
+  const bookedTimes = bookedList.map(b => b.time);
+
+  // Update Schedule Summary Box
+  updateScheduleSummaryCard(bookedList);
+
+  const filtered = TIME_SLOTS.filter(s => {
+    return currentBooking.activePeriodFilter === "all" || s.period === currentBooking.activePeriodFilter;
+  });
+
+  // If current selected time is booked, pick the first available one
+  if (bookedTimes.includes(currentBooking.timeSlot)) {
+    const nextFree = TIME_SLOTS.find(s => !bookedTimes.includes(s.time));
+    if (nextFree) {
+      currentBooking.timeSlot = nextFree.time;
+    }
+  }
 
   container.innerHTML = filtered.map(slot => {
-    const isSelected = slot.time === currentBooking.timeSlot;
+    const isBooked = bookedTimes.includes(slot.time);
+    const isSelected = !isBooked && slot.time === currentBooking.timeSlot;
+
     return `
-      <div class="time-slot ${isSelected ? 'selected' : ''}" data-slot-time="${slot.time}">
+      <div class="time-slot ${isBooked ? 'booked' : 'available'} ${isSelected ? 'selected' : ''}" 
+           data-slot-time="${slot.time}"
+           title="${isBooked ? 'Already reserved for this date' : 'Available for reservation'}">
         <span class="slot-time">${slot.time}</span>
-        <span class="slot-status ${slot.statusClass}">${slot.status}</span>
+        <span class="slot-status ${isBooked ? 'booked' : 'available'}">
+          ${isBooked ? '<i class="fa-solid fa-lock"></i> Booked' : '<i class="fa-solid fa-circle-check"></i> Free'}
+        </span>
       </div>
     `;
   }).join("");
 
+  // Period Tabs setup
   tabBtns.forEach(btn => {
-    btn.classList.toggle("active", btn.getAttribute("data-period") === periodFilter);
-    btn.onclick = () => renderTimeSlots(btn.getAttribute("data-period"));
+    btn.classList.toggle("active", btn.getAttribute("data-period") === currentBooking.activePeriodFilter);
+    btn.onclick = () => {
+      currentBooking.activePeriodFilter = btn.getAttribute("data-period");
+      renderTimeSlots();
+    };
   });
 
-  container.querySelectorAll(".time-slot").forEach(slotEl => {
+  // Slot clicks
+  container.querySelectorAll(".time-slot.available").forEach(slotEl => {
     slotEl.addEventListener("click", () => {
       container.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
       slotEl.classList.add("selected");
@@ -282,7 +469,97 @@ function renderTimeSlots(periodFilter = "night") {
   });
 }
 
-// 4. Addons
+function updateScheduleSummaryCard(bookedList) {
+  const nameEl = document.getElementById("schedule-seating-name");
+  const dateEl = document.getElementById("schedule-date-str");
+  const countBadge = document.getElementById("schedule-count-badge");
+  const contentEl = document.getElementById("schedule-summary-content");
+
+  if (nameEl) nameEl.textContent = currentBooking.seating.name;
+  if (dateEl) dateEl.textContent = currentBooking.formattedDate;
+
+  if (!contentEl) return;
+
+  const totalSlots = TIME_SLOTS.length;
+  const bookedCount = bookedList.length;
+  const availableCount = totalSlots - bookedCount;
+
+  if (countBadge) {
+    if (bookedCount === 0) {
+      countBadge.textContent = "All 24 Slots Free";
+      countBadge.style.color = "#34d399";
+      countBadge.style.borderColor = "rgba(16, 185, 129, 0.35)";
+    } else {
+      countBadge.textContent = `${bookedCount} Booked • ${availableCount} Free`;
+      countBadge.style.color = "#f87171";
+      countBadge.style.borderColor = "rgba(239, 68, 68, 0.35)";
+    }
+  }
+
+  if (bookedCount === 0) {
+    contentEl.innerHTML = `
+      <div class="chip-all-free">
+        <i class="fa-solid fa-circle-check"></i> 
+        All time slots are currently open and available for <b>${currentBooking.seating.name}</b> on this date! Pick any time below.
+      </div>
+    `;
+  } else {
+    const chipsHtml = bookedList.map(b => {
+      return `<span class="chip-booked"><i class="fa-solid fa-lock"></i> ${b.time} (Reserved)</span>`;
+    }).join(" ");
+
+    contentEl.innerHTML = `
+      <div class="booked-chips-wrap">
+        <span style="font-weight: 600; color: var(--text-primary);">Booked on this date:</span>
+        ${chipsHtml}
+        <span class="chip-free-note">
+          <i class="fa-solid fa-check"></i> All other ${availableCount} slots are free!
+        </span>
+      </div>
+    `;
+  }
+}
+
+// -------------------------------------------------------------
+// 4. Custom Time Picker (Pick any exact custom time freely)
+// -------------------------------------------------------------
+function setupCustomTimePicker() {
+  const picker = document.getElementById("custom-time-picker");
+  if (!picker) return;
+
+  picker.addEventListener("change", (e) => {
+    if (!e.target.value) return;
+    const [hStr, mStr] = e.target.value.split(":");
+    let h = parseInt(hStr, 10);
+    const militaryH = h;
+    const m = mStr;
+    const period = h >= 12 ? "PM" : "AM";
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
+    const formatted = `${String(h).padStart(2, '0')}:${m} ${period}`;
+
+    // Validate cafe hours 11:00 AM to 11:00 PM
+    if (militaryH < 11 || militaryH > 23) {
+      alert("Please choose a time during cafe hours: 11:00 AM to 11:00 PM.");
+      return;
+    }
+
+    // Check if slot is already booked
+    if (isSlotBooked(currentBooking.seating.id, currentBooking.dateKey, formatted)) {
+      alert(`${formatted} is already booked for ${currentBooking.seating.name} on ${currentBooking.formattedDate}. Please choose another time.`);
+      return;
+    }
+
+    currentBooking.timeSlot = formatted;
+    // Deselect standard preset chips
+    document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
+    updateSummaryPreview();
+  });
+}
+
+// -------------------------------------------------------------
+// 5. Addon Checkboxes
+// -------------------------------------------------------------
 function setupAddons() {
   const addonBoxes = document.querySelectorAll(".addon-box");
   addonBoxes.forEach(box => {
@@ -304,7 +581,9 @@ function setupAddons() {
   });
 }
 
-// 5. Form Input Listeners
+// -------------------------------------------------------------
+// 6. Form Listeners & Submission
+// -------------------------------------------------------------
 function setupFormListeners() {
   const nameInput = document.getElementById("booking-name");
   const phoneInput = document.getElementById("booking-phone");
@@ -333,7 +612,6 @@ function setupFormListeners() {
   }
 }
 
-// 6. Update Live Summary preview
 function updateSummaryPreview() {
   const summaryTitle = document.getElementById("summary-title");
   const summaryDetails = document.getElementById("summary-details");
@@ -351,7 +629,9 @@ function updateSummaryPreview() {
   }
 }
 
-// 7. Handle Booking Submit & Generate VIP Pass
+// -------------------------------------------------------------
+// 7. Booking Submission & Pass Generation
+// -------------------------------------------------------------
 function handleBookingSubmit() {
   const nameInput = document.getElementById("booking-name");
   const phoneInput = document.getElementById("booking-phone");
@@ -368,9 +648,31 @@ function handleBookingSubmit() {
     return;
   }
 
+  // Double check if time slot was taken
+  if (isSlotBooked(currentBooking.seating.id, currentBooking.dateKey, currentBooking.timeSlot)) {
+    alert(`Sorry! ${currentBooking.timeSlot} on ${currentBooking.formattedDate} is already booked. Please choose an available time.`);
+    renderTimeSlots();
+    return;
+  }
+
   currentBooking.name = nameInput.value.trim();
   currentBooking.phone = phoneInput.value.trim();
   currentBooking.refId = generateRefId();
+
+  // Save into local booking registry
+  addBooking({
+    seatingId: currentBooking.seating.id,
+    seatingName: currentBooking.seating.name,
+    dateKey: currentBooking.dateKey,
+    time: currentBooking.timeSlot,
+    name: currentBooking.name,
+    phone: currentBooking.phone,
+    refId: currentBooking.refId
+  });
+
+  // Re-render floor plan & time slots so newly booked slot turns into red "Booked"
+  renderFloorPlan();
+  renderTimeSlots();
 
   // Populate Pass modal
   document.getElementById("pass-ref-id").textContent = currentBooking.refId;
@@ -418,7 +720,9 @@ function handleBookingSubmit() {
   }
 }
 
+// -------------------------------------------------------------
 // 8. Build WhatsApp Notification Message sent to Cafe Owner (6307-693972)
+// -------------------------------------------------------------
 function buildWhatsAppMessage(feastSummary) {
   let msg = `*NEW TABLE / CABIN RESERVATION*\n`;
   msg += `*Blue Cave Cafe Kanpur*\n\n`;

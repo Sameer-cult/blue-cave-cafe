@@ -10,7 +10,7 @@ const MENU_ITEMS = [
     id: "m1",
     category: "pastas",
     name: "Classic White Sauce Alfredo Penne",
-    desc: "Creamy garlic butter blend, Italian herbs, sautéed sweet corn & mushrooms with aged parmesan. (Customer #1 Favorite)",
+    desc: "Creamy garlic butter blend, Italian herbs, sautéed sweet corn & mushrooms with aged parmesan.",
     isVeg: true,
     isPopular: true,
     tag: "Signature Bestseller"

@@ -27,6 +27,96 @@
   right: 0;
   height: 4px;
   background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
+/* Cafe Operating Hours & Real-Time Status Banner */
+.cafe-hours-status-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hours-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hours-banner-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.hours-banner-title {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.hours-banner-sub {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.hours-banner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hours-banner-badge.is-open {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.hours-banner-badge.is-closed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.status-pulse-dot, .dot-live {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  animation: pulse-dot 1.8s infinite;
+  display: inline-block;
+}
+
+.dot-closed {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+  display: inline-block;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
 }
 
 /* Floor Plan Layout */
@@ -337,6 +427,104 @@
   box-shadow: var(--accent-glow);
 }
 
+.custom-date-picker-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.custom-date-picker-row label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Live Booked vs Available Schedule Summary Card */
+.schedule-summary-card {
+  background: rgba(4, 7, 14, 0.75);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 24px;
+}
+
+.schedule-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.schedule-summary-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-summary-title i {
+  color: var(--accent-primary);
+}
+
+.schedule-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.schedule-summary-content {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.booked-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.chip-booked {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.chip-free-note {
+  color: #34d399;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chip-all-free {
+  color: #34d399;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* Time Slot Tabs & Chips */
 .slot-category-tabs {
   display: flex;
@@ -399,6 +587,34 @@
   font-weight: 700;
 }
 
+.time-slot.booked {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.2);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.time-slot.booked:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  transform: none;
+}
+
+.time-slot.booked .slot-time {
+  color: #9ca3af;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.time-slot.booked .slot-status {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.time-slot.available .slot-status {
+  color: #34d399;
+}
+
 .slot-time {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.98rem;
@@ -417,6 +633,55 @@
 
 .slot-status.available {
   color: #10b981;
+}
+
+/* Custom Time Picker */
+.custom-time-row {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.custom-time-row label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.custom-time-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.custom-time-picker {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.custom-time-picker:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+.custom-time-hint {
+  font-size: 0.74rem;
+  color: var(--text-muted);
 }
 
 /* Guest Stepper */

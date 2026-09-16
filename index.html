@@ -148,14 +148,6 @@
                 <p>Couples & Birthdays</p>
               </div>
             </div>
-
-            <div class="floating-pill bottom-left">
-              <div class="pill-icon"><i class="fa-solid fa-bowl-food"></i></div>
-              <div class="pill-content">
-                <h4>White Sauce Pasta</h4>
-                <p>Top Customer Pick</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -229,14 +221,36 @@
         </div>
 
         <div class="booking-card">
+          <!-- Cafe Operating Hours & Real-Time Status Banner -->
+          <div class="cafe-hours-status-banner">
+            <div class="hours-banner-left">
+              <div class="hours-banner-icon">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+              <div class="hours-banner-text">
+                <div class="hours-banner-title">
+                  <strong>Cafe Operating Hours:</strong> 11:00 AM – 11:00 PM Daily
+                </div>
+                <div class="hours-banner-sub">
+                  Freely select any date and time slot between 11:00 AM and 11:00 PM.
+                </div>
+              </div>
+            </div>
+            <div class="hours-banner-badge" id="booking-open-badge">
+              <span class="status-pulse-dot"></span>
+              <span id="booking-open-text">Open Now (11:00 AM – 11:00 PM)</span>
+            </div>
+          </div>
+
           <!-- Step 1: Interactive Visual Floor Plan -->
           <div class="floorplan-header">
             <div>
               <h3 style="font-size: 1.25rem; font-weight: 700;">
                 <span style="color: var(--accent-primary);">Step 1:</span> Choose a Cabin or Table
-                 <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
-                Select from our 3 Cave Cabins (A, B, C) or 3 Open Cafe Tables (1, 2, 3)
-              </p>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                  Select from our 3 Cave Cabins (A, B, C) or 3 Open Cafe Tables (1, 2, 3)
+                </p>
+              </h3>
             </div>
             
             <!-- Zone Filter Tabs -->
@@ -270,30 +284,57 @@
           <div class="booking-steps-grid">
             <!-- Left Column: Date & Time Slots -->
             <div>
-              <!-- Date Selector -->
+              <!-- Date Selector (Freely Pick Any Date) -->
               <div class="booking-field-group">
                 <div class="field-label">
-                  <span><i class="fa-regular fa-calendar"></i> Select Date</span>
-                  <span class="field-label-hint">Fast 1-click select</span>
+                  <span><i class="fa-regular fa-calendar"></i> Select Date Freely</span>
+                  <span class="field-label-hint" id="selected-date-display">Today</span>
                 </div>
                 <div class="date-chips" id="date-chips">
                   <!-- Rendered dynamically -->
                 </div>
-                <input type="date" id="custom-date-picker" class="custom-date-input" title="Choose specific date">
+                <div class="custom-date-picker-row">
+                  <label for="custom-date-picker"><i class="fa-solid fa-calendar-days"></i> Or pick any date freely:</label>
+                  <input type="date" id="custom-date-picker" class="custom-date-input" title="Choose any date freely">
+                </div>
               </div>
 
-              <!-- Time Slots Grid -->
+              <!-- Live Booked vs Available Schedule Summary -->
+              <div class="schedule-summary-card" id="schedule-summary-card">
+                <div class="schedule-summary-header">
+                  <div class="schedule-summary-title">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>Schedule for <b id="schedule-seating-name">Cabin A</b> on <b id="schedule-date-str">Today</b></span>
+                  </div>
+                  <span class="schedule-badge" id="schedule-count-badge">Checking...</span>
+                </div>
+                <div class="schedule-summary-content" id="schedule-summary-content">
+                  <!-- Dynamically lists currently booked slots -->
+                </div>
+              </div>
+
+              <!-- Time Slots Grid (Freely Choose 11:00 AM to 11:00 PM) -->
               <div class="booking-field-group">
                 <div class="field-label">
-                  <span><i class="fa-regular fa-clock"></i> Select Time Slot</span>
+                  <span><i class="fa-regular fa-clock"></i> Select Time Slot (11 AM – 11 PM)</span>
                   <div class="slot-category-tabs">
-                    <button class="slot-cat-btn" data-period="afternoon">Lunch</button>
-                    <button class="slot-cat-btn" data-period="sunset">Sunset</button>
-                    <button class="slot-cat-btn active" data-period="night">Night Ambiance</button>
+                    <button type="button" class="slot-cat-btn active" data-period="all">All (11 AM–11 PM)</button>
+                    <button type="button" class="slot-cat-btn" data-period="afternoon">Lunch</button>
+                    <button type="button" class="slot-cat-btn" data-period="sunset">Evening</button>
+                    <button type="button" class="slot-cat-btn" data-period="night">Night</button>
                   </div>
                 </div>
                 <div class="slots-grid" id="slots-grid">
                   <!-- Rendered dynamically by js/booking.js -->
+                </div>
+
+                <!-- Custom Time Option -->
+                <div class="custom-time-row">
+                  <label for="custom-time-picker"><i class="fa-regular fa-clock"></i> Or choose any exact custom time freely:</label>
+                  <div class="custom-time-input-wrap">
+                    <input type="time" id="custom-time-picker" min="11:00" max="23:00" class="custom-time-picker" step="900" title="Custom time between 11:00 AM and 11:00 PM">
+                    <span class="custom-time-hint">11:00 AM – 11:00 PM</span>
+                  </div>
                 </div>
               </div>
             </div>
