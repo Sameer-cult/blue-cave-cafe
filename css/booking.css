@@ -979,6 +979,35 @@ textarea.form-input {
   color: var(--text-secondary);
 }
 
+/* Anti-Spam Protection Badge */
+.anti-spam-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--accent-primary);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  padding: 3px 8px;
+  border-radius: 999px;
+  margin-top: 5px;
+  transition: all var(--transition-fast);
+}
+
+.anti-spam-badge.is-cooldown {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.btn-primary.is-cooldown {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
 /* ==========================================================================
    Holographic Digital Booking Pass Modal
    ========================================================================== */

@@ -414,6 +414,9 @@
                 </div>
                 <div class="phone-char-counter" id="phone-char-counter">0 / 10 digits entered</div>
                 <textarea id="booking-note" class="form-input" placeholder="Special Request / Celebration Note (e.g. Date with Priya, Birthday Celebration)"></textarea>
+
+                <!-- Invisible Anti-Spam Honeypot (Catches bots) -->
+                <input type="text" name="bcc_website_trap" id="bcc-website-trap" style="display:none !important; position:absolute; left:-9999px; opacity:0; pointer-events:none;" tabindex="-1" autocomplete="off">
               </div>
             </div>
           </div>
@@ -425,6 +428,9 @@
               <div class="summary-texts">
                 <h4 id="summary-title">Cabin A (Cave Cabin)</h4>
                 <p id="summary-details">Today • 07:00 PM</p>
+                <div class="anti-spam-badge" id="anti-spam-status">
+                  <i class="fa-solid fa-shield-halved"></i> <span>Anti-Spam Protected: Max 3 bookings / 5 hrs</span>
+                </div>
               </div>
             </div>
 

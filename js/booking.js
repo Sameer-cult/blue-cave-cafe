@@ -9,6 +9,115 @@
 const CAFE_PHONE = "916307693972"; // 6307-693972 formatted for WhatsApp API
 const BOOKING_STORAGE_KEY = "blue_cave_bookings_v3";
 
+// -------------------------------------------------------------
+// Anti-Spam Rate Limiting Module (Max 3 Bookings / 5-Hour Cooldown)
+// -------------------------------------------------------------
+const SPAM_LIMIT_MAX_REQUESTS = 3;
+const SPAM_COOLDOWN_MS = 5 * 60 * 60 * 1000; // 5 hours in milliseconds
+const SPAM_STORAGE_KEY = "bcc_rate_limit_records_v1";
+
+let clientIpAddress = "unknown_client";
+
+// Detect IP address in the background on page load
+function initClientIpDetection() {
+  fetch("https://api.ipify.org?format=json")
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.ip) {
+        clientIpAddress = data.ip;
+        updateAntiSpamBadgeUI();
+      }
+    })
+    .catch(() => {});
+}
+
+function getRateLimitHistory() {
+  try {
+    const raw = localStorage.getItem(SPAM_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [];
+}
+
+function saveRateLimitHistory(records) {
+  try {
+    localStorage.setItem(SPAM_STORAGE_KEY, JSON.stringify(records));
+  } catch (e) {}
+}
+
+function checkRateLimitStatus() {
+  const now = Date.now();
+  const allRecords = getRateLimitHistory();
+
+  // Filter records within the active 5-hour rolling window
+  const recentRecords = allRecords.filter(rec => {
+    const isWithinWindow = (now - rec.timestamp) < SPAM_COOLDOWN_MS;
+    const isSameActor = (rec.ip === clientIpAddress && clientIpAddress !== "unknown_client") || rec.isDevice;
+    return isWithinWindow && isSameActor;
+  });
+
+  const count = recentRecords.length;
+
+  if (count >= SPAM_LIMIT_MAX_REQUESTS) {
+    const earliestInWindow = Math.min(...recentRecords.map(r => r.timestamp));
+    const remainingMs = Math.max(0, (earliestInWindow + SPAM_COOLDOWN_MS) - now);
+    const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
+    const remainingMins = Math.ceil((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    return {
+      allowed: false,
+      count: count,
+      remainingMs: remainingMs,
+      remainingText: `${remainingHours > 0 ? remainingHours + ' hr ' : ''}${remainingMins} min${remainingMins > 1 ? 's' : ''}`
+    };
+  }
+
+  return {
+    allowed: true,
+    count: count,
+    remainingAttempts: SPAM_LIMIT_MAX_REQUESTS - count
+  };
+}
+
+function recordBookingAttempt() {
+  const now = Date.now();
+  const records = getRateLimitHistory();
+  const pruned = records.filter(r => (now - r.timestamp) < SPAM_COOLDOWN_MS);
+
+  pruned.push({
+    ip: clientIpAddress,
+    isDevice: true,
+    timestamp: now
+  });
+
+  saveRateLimitHistory(pruned);
+  updateAntiSpamBadgeUI();
+}
+
+function updateAntiSpamBadgeUI() {
+  const badge = document.getElementById("anti-spam-status");
+  const submitBtn = document.getElementById("btn-confirm-reservation");
+  if (!badge) return;
+
+  const status = checkRateLimitStatus();
+  if (!status.allowed) {
+    badge.className = "anti-spam-badge is-cooldown";
+    badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span>5-Hr Cooldown: Re-opens in ${status.remainingText}</span>`;
+    if (submitBtn) {
+      submitBtn.classList.add("is-cooldown");
+      submitBtn.innerHTML = `<i class="fa-solid fa-lock"></i> Cooldown Active (${status.remainingText})`;
+    }
+  } else {
+    badge.className = "anti-spam-badge";
+    const left = status.remainingAttempts;
+    badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span>Anti-Spam: ${left} of 3 bookings left</span>`;
+    if (submitBtn && submitBtn.classList.contains("is-cooldown")) {
+      submitBtn.classList.remove("is-cooldown");
+      submitBtn.innerHTML = `<i class="fa-solid fa-check-circle"></i> Confirm Table & Get Pass`;
+    }
+  }
+}
+
 // Seating Inventory: Exactly 3 Themed Cave Cabins & 3 Cafe Tables
 const SEATING_INVENTORY = [
   // 3 Themed Cave Cabins
@@ -332,6 +441,11 @@ document.addEventListener("DOMContentLoaded", () => {
   setupFormListeners();
   updateHoursBanner();
   updateSummaryPreview();
+
+  // Initialize anti-spam IP tracking & live status badge
+  initClientIpDetection();
+  updateAntiSpamBadgeUI();
+  setInterval(updateAntiSpamBadgeUI, 60000);
 
   // Keep hours banner fresh
   setInterval(updateHoursBanner, 60000);
@@ -880,6 +994,22 @@ function updateSummaryPreview() {
 // 7. Booking Submission & Pass Generation
 // -------------------------------------------------------------
 function handleBookingSubmit() {
+  // Anti-Bot Honeypot trap check
+  const honeypot = document.getElementById("bcc-website-trap");
+  if (honeypot && honeypot.value) {
+    console.warn("Spam bot submission caught by honeypot.");
+    alert("Request could not be processed. Please refresh and try again.");
+    return;
+  }
+
+  // Anti-Spam Rate Limit check (Max 3 Bookings / 5-Hour Cooldown)
+  const rateLimit = checkRateLimitStatus();
+  if (!rateLimit.allowed) {
+    alert(`⚠️ Booking limit reached (Max 3 reservations allowed per 5 hours).\n\nTo prevent spam, your device/IP is on a cooldown period.\nYou can make another booking in ${rateLimit.remainingText}.\n\nFor urgent table reservations, please call or WhatsApp the cafe directly at +91 63076 93972.`);
+    updateAntiSpamBadgeUI();
+    return;
+  }
+
   const nameInput = document.getElementById("booking-name");
   const phoneInput = document.getElementById("booking-phone");
 
@@ -944,6 +1074,9 @@ function handleBookingSubmit() {
     phone: currentBooking.phone,
     refId: currentBooking.refId
   });
+
+  // Record this booking in the Anti-Spam rate-limit registry
+  recordBookingAttempt();
 
   // Re-render floor plan & time slots so all covered slots turn into red "Booked"
   renderFloorPlan();
