@@ -1,0 +1,18 @@
+{
+  "name": "blue-cave-cafe",
+  "version": "1.0.0",
+  "description": "Official website and interactive table booking system for Blue Cave Cafe Kanpur",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve ."
+  },
+  "keywords": [
+    "blue-cave-cafe",
+    "kanpur",
+    "table-booking",
+    "private-cabins"
+  ],
+  "author": "Blue Cave Cafe",
+  "license": "ISC"
+}
