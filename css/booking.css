@@ -1038,50 +1038,305 @@ textarea.form-input {
 @media (max-width: 768px) {
   .mobile-quick-bar {
     display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(6, 9, 17, 0.96);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border-glow);
+    padding: 6px 16px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    z-index: 999;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.7);
   }
   
   body {
-    padding-bottom: 60px;
+    padding-bottom: 75px;
   }
-}
 
-/* Responsive adjustments */
-@media (max-width: 900px) {
-  .floorplan-grid {
-    grid-template-columns: repeat(2, 1fr);
+  /* Booking Card Mobile */
+  .booking-card {
+    padding: 20px 14px;
+    border-radius: var(--radius-lg);
   }
-  
+
+  .cafe-hours-status-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .hours-banner-left {
+    gap: 10px;
+  }
+
+  .hours-banner-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .hours-banner-title {
+    font-size: 0.92rem;
+  }
+
+  .hours-banner-sub {
+    font-size: 0.78rem;
+  }
+
+  .hours-banner-badge {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+  }
+
+  /* Floor Plan Mobile */
+  .floorplan-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .zone-filter-tabs {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .zone-filter-btn {
+    flex: 1;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+  }
+
+  .floorplan-container {
+    padding: 14px 10px;
+  }
+
+  .floorplan-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .floor-booth {
+    padding: 16px 14px;
+  }
+
+  .booth-name {
+    font-size: 1.05rem;
+  }
+
+  .booth-desc {
+    font-size: 0.78rem;
+    margin-bottom: 10px;
+  }
+
+  /* Guide Notice Card */
+  .booking-notice-card {
+    padding: 14px;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .notice-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.95rem;
+  }
+
+  .notice-content h4 {
+    font-size: 0.88rem;
+  }
+
+  .notice-content p {
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+
+  /* Steps Grid */
   .booking-steps-grid {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
-  
+
+  .booking-field-group {
+    margin-bottom: 20px;
+  }
+
+  /* Date Selector Mobile */
+  .date-chips {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .date-chip {
+    padding: 10px 4px;
+  }
+
+  .date-chip .day {
+    font-size: 0.66rem;
+  }
+
+  .date-chip .date-str {
+    font-size: 0.88rem;
+  }
+
+  .custom-date-picker-row {
+    margin-top: 8px;
+  }
+
+  .custom-date-input {
+    font-size: 16px; /* Prevents auto-zoom on iOS */
+    padding: 10px 14px;
+  }
+
+  /* Time Slots Mobile */
+  .slot-legend-bar {
+    font-size: 0.74rem;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .slot-category-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .slot-category-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .slot-cat-btn {
+    white-space: nowrap;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .slots-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .time-slot {
+    padding: 10px 4px;
+    gap: 2px;
+  }
+
+  .slot-time {
+    font-size: 0.85rem;
+  }
+
+  .slot-status {
+    font-size: 0.62rem;
+  }
+
+  /* Custom Time Picker */
+  .custom-time-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .custom-time-input-wrap {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .custom-time-picker {
+    font-size: 16px;
+  }
+
+  /* Add-ons Mobile */
   .addons-list {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
-  
-  .booking-card {
-    padding: 28px 20px;
-  }
-}
 
-@media (max-width: 600px) {
-  .floorplan-grid {
-    grid-template-columns: 1fr;
+  .addon-box {
+    padding: 12px 14px;
   }
-  
-  .date-chips {
-    grid-template-columns: repeat(2, 1fr);
+
+  /* Form Inputs Mobile (Min 16px font to prevent Safari iOS auto-zoom) */
+  .form-input {
+    font-size: 16px;
+    padding: 12px 14px;
   }
-  
-  .slots-grid {
-    grid-template-columns: repeat(2, 1fr);
+
+  /* Submit Row Mobile */
+  .booking-submit-row {
+    flex-direction: column;
+    gap: 14px;
+    align-items: stretch;
+    padding-top: 16px;
   }
-  
+
   .booking-summary-preview {
     width: 100%;
   }
-  
-  .booking-submit-row .btn {
+
+  .summary-thumb {
+    width: 50px;
+    height: 50px;
+  }
+
+  .summary-texts h4 {
+    font-size: 0.95rem;
+  }
+
+  .summary-texts p {
+    font-size: 0.8rem;
+  }
+
+  .booking-submit-row .btn-primary {
     width: 100%;
+    justify-content: center;
+    padding: 15px;
+    font-size: 1.02rem;
+  }
+
+  /* Pass Modal Mobile */
+  .booking-modal-backdrop {
+    padding: 12px;
+  }
+
+  .pass-card {
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: var(--radius-lg);
+  }
+
+  .pass-header {
+    padding: 18px 16px;
+  }
+
+  .pass-body {
+    padding: 18px 16px;
+  }
+
+  .pass-data-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .pass-data-item p {
+    font-size: 0.86rem;
+  }
+
+  .pass-qr-row {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+    padding: 12px;
   }
 }

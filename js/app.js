@@ -339,16 +339,14 @@ function initMobileMenu() {
 
   if (toggle && nav) {
     toggle.addEventListener("click", () => {
-      const isVisible = nav.style.display === "flex";
-      nav.style.display = isVisible ? "none" : "flex";
-      nav.style.flexDirection = "column";
-      nav.style.position = "absolute";
-      nav.style.top = "80px";
-      nav.style.left = "0";
-      nav.style.right = "0";
-      nav.style.background = "rgba(6, 9, 17, 0.98)";
-      nav.style.padding = "24px";
-      nav.style.borderBottom = "1px solid var(--border-subtle)";
+      nav.classList.toggle("nav-open");
+    });
+
+    // Auto-close menu when tapping any link
+    nav.querySelectorAll(".nav-link").forEach(link => {
+      link.addEventListener("click", () => {
+        nav.classList.remove("nav-open");
+      });
     });
   }
 }
