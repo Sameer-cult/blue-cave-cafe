@@ -437,6 +437,14 @@ window.openQuickView = function(itemId) {
     if (chips.length > 0) chips[0].classList.add('active');
   });
 
+  // Conditionally hide milk and sweetness for non-drinks
+  const isDrink = item.category === 'shakes' || item.category === 'drinks';
+  const milkGroup = document.getElementById('milk-options-group');
+  const sweetnessGroup = document.getElementById('sweetness-options-group');
+
+  if (milkGroup) milkGroup.style.display = isDrink ? 'block' : 'none';
+  if (sweetnessGroup) sweetnessGroup.style.display = isDrink ? 'block' : 'none';
+
   calculateModalPrice();
 
   const modal = document.getElementById('quick-view-modal');
@@ -447,7 +455,11 @@ function calculateModalPrice() {
   modalOptionsCost = 0;
   const activeChips = document.querySelectorAll('.option-chip.active');
   activeChips.forEach(chip => {
-    modalOptionsCost += parseInt(chip.getAttribute('data-price') || 0);
+    // Only add cost if the group is visible
+    const group = chip.closest('.option-group');
+    if (!group || group.style.display !== 'none') {
+      modalOptionsCost += parseInt(chip.getAttribute('data-price') || 0);
+    }
   });
 
   const totalPrice = currentModalPrice + modalOptionsCost;
