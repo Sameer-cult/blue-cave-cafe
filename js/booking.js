@@ -1,57 +1,81 @@
 /**
  * BLUE CAVE CAFE — Booking Engine Logic
- * Handles interactive floor plan, slot availability, pass generation & WhatsApp integration
+ * Exactly 3 Cabins (Cabin A, B, C) & 3 Tables (Table 1, 2, 3)
+ * Simplified reservation: Pick Date -> Pick Cabin/Table -> Pick Slot -> WhatsApp Direct Notification
  */
 
 const CAFE_PHONE = "916307693972"; // 6307-693972 formatted for WhatsApp API
 
-// Seating Inventory Data
+// Seating Inventory: Exactly 3 Private Cabins & 3 Cafe Tables
 const SEATING_INVENTORY = [
+  // 3 Private Cabins
   {
     id: "cabin-a",
-    name: "Cabin A • Starlight Love Cave",
-    category: "Romantic Private Cabin",
-    capacity: "2 Guests",
-    desc: "Intimate private alcove draped in fairy lights & candles. Perfect for dates & anniversaries.",
-    badge: "Romantic",
+    name: "Cabin A",
+    category: "Private Cave Cabin",
+    type: "cabin",
+    desc: "Intimate private alcove with fairy lights & romantic candlelight. Perfect for dates.",
+    badge: "Private Cabin",
     badgeClass: "romantic",
     image: "assets/images/private_cabin_booth.jpg"
   },
   {
     id: "cabin-b",
-    name: "Cabin B • Secret Rock Retreat",
-    category: "Private Acoustic Cove",
-    capacity: "2–4 Guests",
-    desc: "Sound-cushioned textured cave nook for deep conversations & cozy dining.",
-    badge: "Cozy Nook",
+    name: "Cabin B",
+    category: "Private Cave Cabin",
+    type: "cabin",
+    desc: "Cozy stone cave nook with ambient lighting for privacy and heartfelt conversations.",
+    badge: "Private Cabin",
     badgeClass: "romantic",
     image: "assets/images/cabin_dining_real.jpg"
   },
   {
     id: "cabin-c",
-    name: "Cabin C • Neon Party Vault",
-    category: "VIP Group Celebration Cave",
-    capacity: "4–8 Guests",
-    desc: "Spacious private cave with customizable party neon, bluetooth sound & birthday setup.",
-    badge: "Party VIP",
+    name: "Cabin C",
+    category: "VIP Private Cabin",
+    type: "cabin",
+    desc: "Spacious private cave with customizable party neon glow. Great for dates & birthdays.",
+    badge: "VIP Cabin",
     badgeClass: "party",
     image: "assets/images/neon_cave_interior.jpg"
   },
+
+  // 3 Cafe Tables
   {
-    id: "table-open",
-    name: "Table Zone • Board Game Lounge",
-    category: "Open Social Cafe",
-    capacity: "2–6 Guests",
-    desc: "Central cave dining table adjacent to our Uno, Ludo & board games collection.",
-    badge: "Games & Coffee",
+    id: "table-1",
+    name: "Table 1",
+    category: "Cave Dining Table",
+    type: "table",
+    desc: "Central cave table with plush booth seating right under the stone rock arch.",
+    badge: "Cave Table",
+    badgeClass: "games",
+    image: "assets/images/hero_cave_ambiance.jpg"
+  },
+  {
+    id: "table-2",
+    name: "Table 2",
+    category: "Board Game Arena Table",
+    type: "table",
+    desc: "Next to the Uno, Ludo & board games shelf. Relaxed and fun hangout spot.",
+    badge: "Games Table",
     badgeClass: "games",
     image: "assets/images/cafe_social_vibe.jpg"
+  },
+  {
+    id: "table-3",
+    name: "Table 3",
+    category: "Corner Lounge Table",
+    type: "table",
+    desc: "Quiet corner alcove table, ideal for espresso, shakes and artisanal Italian pasta.",
+    badge: "Lounge Table",
+    badgeClass: "games",
+    image: "assets/images/cafe_special_dish.jpg"
   }
 ];
 
-// Time Slots Data with Dynamic Availability
+// Time Slots with Live Availability States
 const TIME_SLOTS = [
-  // Afternoon Chill (11:30 AM - 3:00 PM)
+  // Lunch (11:30 AM - 2:30 PM)
   { time: "11:30 AM", period: "afternoon", status: "Available", statusClass: "available" },
   { time: "12:30 PM", period: "afternoon", status: "Available", statusClass: "available" },
   { time: "01:30 PM", period: "afternoon", status: "Filling Fast", statusClass: "filling" },
@@ -71,11 +95,11 @@ const TIME_SLOTS = [
 
 // Active State
 let currentBooking = {
-  seating: SEATING_INVENTORY[0],
+  seating: SEATING_INVENTORY[0], // Defaults to Cabin A
+  activeFilter: "all",
   date: "Today",
   formattedDate: getTodayFormatted(),
   timeSlot: "07:00 PM",
-  guests: 2,
   addons: [],
   name: "",
   phone: "",
@@ -95,35 +119,39 @@ function generateRefId() {
 // Initialize Booking Engine on DOM ready
 document.addEventListener("DOMContentLoaded", () => {
   renderFloorPlan();
+  initZoneFilters();
   renderDateChips();
   renderTimeSlots("night");
-  setupGuestStepper();
   setupAddons();
   setupFormListeners();
   updateSummaryPreview();
 });
 
-// 1. Render Floor Plan
+// 1. Render Floor Plan Grid (3 Cabins & 3 Tables)
 function renderFloorPlan() {
   const container = document.getElementById("floorplan-grid");
   if (!container) return;
 
-  container.innerHTML = SEATING_INVENTORY.map((seat, index) => {
+  const items = currentBooking.activeFilter === "all" 
+    ? SEATING_INVENTORY 
+    : SEATING_INVENTORY.filter(s => s.type === currentBooking.activeFilter);
+
+  container.innerHTML = items.map((seat) => {
     const isSelected = seat.id === currentBooking.seating.id;
     return `
-      <div class="floor-booth ${seat.id === 'cabin-c' ? 'vip-cabin' : ''} ${isSelected ? 'selected' : ''}" data-seat-id="${seat.id}">
+      <div class="floor-booth ${seat.type === 'cabin' ? 'is-cabin' : 'is-table'} ${isSelected ? 'selected' : ''}" data-seat-id="${seat.id}">
         <div>
           <div class="booth-badge-row">
             <span class="booth-badge ${seat.badgeClass}">${seat.badge}</span>
-            <span class="booth-capacity"><i class="fa-solid fa-user-group"></i> ${seat.capacity}</span>
+            <span class="booth-type-tag">${seat.type === 'cabin' ? '🔒 Complete Privacy' : '☕ Social Zone'}</span>
           </div>
           <h4 class="booth-name">${seat.name}</h4>
           <p class="booth-desc">${seat.desc}</p>
         </div>
         <div class="booth-footer">
           <span>${seat.category}</span>
-          <span style="color: ${isSelected ? '#10b981' : 'var(--accent-primary)'}; font-weight: 600;">
-            ${isSelected ? '✓ Selected' : 'Tap to Select'}
+          <span style="color: ${isSelected ? '#10b981' : 'var(--accent-primary)'}; font-weight: 700;">
+            ${isSelected ? '✓ Selected' : 'Tap to Pick'}
           </span>
         </div>
       </div>
@@ -140,6 +168,19 @@ function renderFloorPlan() {
         renderFloorPlan();
         updateSummaryPreview();
       }
+    });
+  });
+}
+
+// Zone Filter Tabs: All (6) | Cabins (3) | Tables (3)
+function initZoneFilters() {
+  const filterBtns = document.querySelectorAll(".zone-filter-btn");
+  filterBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      filterBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentBooking.activeFilter = btn.getAttribute("data-filter");
+      renderFloorPlan();
     });
   });
 }
@@ -214,7 +255,6 @@ function renderTimeSlots(periodFilter = "night") {
   const tabBtns = document.querySelectorAll(".slot-cat-btn");
   if (!container) return;
 
-  // Filter slots
   const filtered = TIME_SLOTS.filter(s => periodFilter === "all" || s.period === periodFilter);
 
   container.innerHTML = filtered.map(slot => {
@@ -227,13 +267,11 @@ function renderTimeSlots(periodFilter = "night") {
     `;
   }).join("");
 
-  // Tab filtering
   tabBtns.forEach(btn => {
     btn.classList.toggle("active", btn.getAttribute("data-period") === periodFilter);
     btn.onclick = () => renderTimeSlots(btn.getAttribute("data-period"));
   });
 
-  // Slot click
   container.querySelectorAll(".time-slot").forEach(slotEl => {
     slotEl.addEventListener("click", () => {
       container.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
@@ -244,36 +282,7 @@ function renderTimeSlots(periodFilter = "night") {
   });
 }
 
-// 4. Guest Stepper
-function setupGuestStepper() {
-  const decBtn = document.getElementById("guest-dec-btn");
-  const incBtn = document.getElementById("guest-inc-btn");
-  const display = document.getElementById("guest-count-display");
-
-  if (!display) return;
-
-  if (decBtn) {
-    decBtn.addEventListener("click", () => {
-      if (currentBooking.guests > 1) {
-        currentBooking.guests--;
-        display.textContent = `${currentBooking.guests} ${currentBooking.guests === 1 ? 'Guest' : 'Guests'}`;
-        updateSummaryPreview();
-      }
-    });
-  }
-
-  if (incBtn) {
-    incBtn.addEventListener("click", () => {
-      if (currentBooking.guests < 15) {
-        currentBooking.guests++;
-        display.textContent = `${currentBooking.guests} Guests`;
-        updateSummaryPreview();
-      }
-    });
-  }
-}
-
-// 5. Addons
+// 4. Addons
 function setupAddons() {
   const addonBoxes = document.querySelectorAll(".addon-box");
   addonBoxes.forEach(box => {
@@ -295,7 +304,7 @@ function setupAddons() {
   });
 }
 
-// 6. Form input listeners
+// 5. Form Input Listeners
 function setupFormListeners() {
   const nameInput = document.getElementById("booking-name");
   const phoneInput = document.getElementById("booking-phone");
@@ -324,35 +333,37 @@ function setupFormListeners() {
   }
 }
 
-// 7. Update Live Summary preview
+// 6. Update Live Summary preview
 function updateSummaryPreview() {
   const summaryTitle = document.getElementById("summary-title");
   const summaryDetails = document.getElementById("summary-details");
   const summaryThumb = document.getElementById("summary-thumb");
 
-  if (summaryTitle) summaryTitle.textContent = currentBooking.seating.name;
+  if (summaryTitle) {
+    summaryTitle.textContent = `${currentBooking.seating.name} (${currentBooking.seating.category})`;
+  }
   if (summaryDetails) {
     const addonText = currentBooking.addons.length > 0 ? ` • +${currentBooking.addons.length} Add-ons` : '';
-    summaryDetails.textContent = `${currentBooking.formattedDate} • ${currentBooking.timeSlot} • ${currentBooking.guests} Guests${addonText}`;
+    summaryDetails.textContent = `${currentBooking.formattedDate} • ${currentBooking.timeSlot}${addonText}`;
   }
   if (summaryThumb) {
     summaryThumb.src = currentBooking.seating.image;
   }
 }
 
-// 8. Handle Booking Submit & Generate Holographic Pass
+// 7. Handle Booking Submit & Generate VIP Pass
 function handleBookingSubmit() {
   const nameInput = document.getElementById("booking-name");
   const phoneInput = document.getElementById("booking-phone");
 
   if (!nameInput || !nameInput.value.trim()) {
-    alert("Please enter your name to book the table/cabin.");
+    alert("Please enter your name for the reservation.");
     if (nameInput) nameInput.focus();
     return;
   }
 
   if (!phoneInput || !phoneInput.value.trim() || phoneInput.value.trim().length < 8) {
-    alert("Please enter a valid phone number for booking confirmation.");
+    alert("Please enter a valid phone number for confirmation.");
     if (phoneInput) phoneInput.focus();
     return;
   }
@@ -364,9 +375,8 @@ function handleBookingSubmit() {
   // Populate Pass modal
   document.getElementById("pass-ref-id").textContent = currentBooking.refId;
   document.getElementById("pass-guest-name").textContent = currentBooking.name;
-  document.getElementById("pass-seating").textContent = currentBooking.seating.name;
+  document.getElementById("pass-seating").textContent = `${currentBooking.seating.name} • ${currentBooking.seating.category}`;
   document.getElementById("pass-date-time").textContent = `${currentBooking.formattedDate} at ${currentBooking.timeSlot}`;
-  document.getElementById("pass-party-size").textContent = `${currentBooking.guests} ${currentBooking.guests === 1 ? 'Guest' : 'Guests'}`;
   
   const addonsDisplay = currentBooking.addons.length > 0 ? currentBooking.addons.join(", ") : "Standard Dining Experience";
   document.getElementById("pass-addons").textContent = addonsDisplay;
@@ -408,23 +418,23 @@ function handleBookingSubmit() {
   }
 }
 
+// 8. Build WhatsApp Notification Message sent to Cafe Owner (6307-693972)
 function buildWhatsAppMessage(feastSummary) {
-  let msg = `*NEW TABLE & CABIN RESERVATION*\n`;
+  let msg = `*NEW TABLE / CABIN RESERVATION*\n`;
   msg += `*Blue Cave Cafe Kanpur*\n\n`;
   msg += `🎫 *Booking Reference:* ${currentBooking.refId}\n`;
   msg += `👤 *Guest Name:* ${currentBooking.name}\n`;
   msg += `📞 *Contact Number:* ${currentBooking.phone}\n`;
   msg += `📅 *Date:* ${currentBooking.formattedDate}\n`;
   msg += `⏰ *Time Slot:* ${currentBooking.timeSlot}\n`;
-  msg += `🪑 *Seating Selection:* ${currentBooking.seating.name}\n`;
-  msg += `👥 *Number of Guests:* ${currentBooking.guests}\n`;
+  msg += `📍 *Selected Option:* ${currentBooking.seating.name} (${currentBooking.seating.category})\n`;
   
   if (currentBooking.addons.length > 0) {
-    msg += `✨ *Special Add-ons:* ${currentBooking.addons.join(", ")}\n`;
+    msg += `✨ *Special Inclusions:* ${currentBooking.addons.join(", ")}\n`;
   }
   
   if (currentBooking.note) {
-    msg += `📝 *Special Request:* ${currentBooking.note}\n`;
+    msg += `📝 *Guest Note:* ${currentBooking.note}\n`;
   }
 
   if (feastSummary) {
@@ -435,5 +445,4 @@ function buildWhatsAppMessage(feastSummary) {
   return msg;
 }
 
-// Export booking details for other modules if needed
 window.currentBooking = currentBooking;
