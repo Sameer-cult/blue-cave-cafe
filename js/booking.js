@@ -6,35 +6,35 @@
 
 const CAFE_PHONE = "916307693972"; // 6307-693972 formatted for WhatsApp API
 
-// Seating Inventory: Exactly 3 Private Cabins & 3 Cafe Tables
+// Seating Inventory: Exactly 3 Cave Cabins & 3 Cafe Tables
 const SEATING_INVENTORY = [
-  // 3 Private Cabins
+  // 3 Cave Cabins
   {
     id: "cabin-a",
     name: "Cabin A",
-    category: "Private Cave Cabin",
+    category: "Themed Cave Cabin",
     type: "cabin",
-    desc: "Intimate private alcove with fairy lights & romantic candlelight. Perfect for dates.",
-    badge: "Private Cabin",
+    desc: "Intimate alcove with fairy lights & romantic candlelight. Perfect for dates.",
+    badge: "Cave Cabin",
     badgeClass: "romantic",
-    image: "assets/images/private_cabin_booth.jpg"
+    image: "assets/images/cozy_cabin_booth.jpg"
   },
   {
     id: "cabin-b",
     name: "Cabin B",
-    category: "Private Cave Cabin",
+    category: "Themed Cave Cabin",
     type: "cabin",
-    desc: "Cozy stone cave nook with ambient lighting for privacy and heartfelt conversations.",
-    badge: "Private Cabin",
+    desc: "Cozy stone cave nook with ambient lighting for quiet dining and heartfelt conversations.",
+    badge: "Cave Cabin",
     badgeClass: "romantic",
     image: "assets/images/cabin_dining_real.jpg"
   },
   {
     id: "cabin-c",
     name: "Cabin C",
-    category: "VIP Private Cabin",
+    category: "VIP Cave Cabin",
     type: "cabin",
-    desc: "Spacious private cave with customizable party neon glow. Great for dates & birthdays.",
+    desc: "Spacious themed cave with customizable party neon glow. Great for dates & birthdays.",
     badge: "VIP Cabin",
     badgeClass: "party",
     image: "assets/images/neon_cave_interior.jpg"
@@ -143,7 +143,7 @@ function renderFloorPlan() {
         <div>
           <div class="booth-badge-row">
             <span class="booth-badge ${seat.badgeClass}">${seat.badge}</span>
-            <span class="booth-type-tag">${seat.type === 'cabin' ? '🔒 Complete Privacy' : '☕ Social Zone'}</span>
+            <span class="booth-type-tag">${seat.type === 'cabin' ? '✨ Cave Ambiance' : '☕ Social Zone'}</span>
           </div>
           <h4 class="booth-name">${seat.name}</h4>
           <p class="booth-desc">${seat.desc}</p>
