@@ -109,7 +109,13 @@ const TIME_SLOTS = [
   { time: "10:30 PM", period: "night" }
 ];
 
-// Helpers for date keys (YYYY-MM-DD)
+// Helpers for date keys (YYYY-MM-DD) & Indian Standard Time (IST)
+function getNowIST() {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 5.5));
+}
+
 function getDateKey(d) {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -118,13 +124,41 @@ function getDateKey(d) {
 }
 
 function getTodayKey() {
-  return getDateKey(new Date());
+  return getDateKey(getNowIST());
 }
 
 function getTomorrowKey() {
-  const d = new Date();
+  const d = getNowIST();
   d.setDate(d.getDate() + 1);
   return getDateKey(d);
+}
+
+// Convert "07:30 PM" or "11:00 AM" to 24-hr { hours, minutes }
+function parseTimeParts(timeStr) {
+  if (!timeStr) return { hours: 0, minutes: 0 };
+  const [time, period] = timeStr.trim().split(" ");
+  let [hours, minutes] = time.split(":").map(Number);
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+  return { hours: Number(hours), minutes: Number(minutes) };
+}
+
+// Determines if a time slot has already elapsed for a given dateKey
+function isTimePassedForDate(timeStr, dateKey) {
+  if (!timeStr) return false;
+  const todayKey = getTodayKey();
+  if (dateKey < todayKey) return true; // Past dates are completely passed
+  if (dateKey > todayKey) return false; // Future dates are all upcoming
+
+  // Same day: compare slot time with current IST time
+  const now = getNowIST();
+  const { hours, minutes } = parseTimeParts(timeStr);
+  const nowH = now.getHours();
+  const nowM = now.getMinutes();
+
+  if (hours < nowH) return true;
+  if (hours === nowH && minutes <= nowM) return true;
+  return false;
 }
 
 // -------------------------------------------------------------
@@ -372,10 +406,20 @@ function setupDatePickers() {
 
   // Native Date Picker listener: allows user to pick ANY future date freely!
   if (dateInput) {
+    dateInput.min = getTodayKey();
+    if (!dateInput.value) dateInput.value = currentBooking.dateKey;
+
     dateInput.addEventListener("change", (e) => {
       if (!e.target.value) return;
 
-      currentBooking.dateKey = e.target.value;
+      if (e.target.value < getTodayKey()) {
+        alert("You cannot book a table for a past date. Please pick today or a future date.");
+        e.target.value = getTodayKey();
+        currentBooking.dateKey = getTodayKey();
+      } else {
+        currentBooking.dateKey = e.target.value;
+      }
+
       const parts = currentBooking.dateKey.split("-");
       const dObj = new Date(parts[0], parts[1] - 1, parts[2]);
       currentBooking.formattedDate = formatDisplayDate(dObj);
@@ -399,7 +443,7 @@ function setupDatePickers() {
 }
 
 function getNextWeekend() {
-  const d = new Date();
+  const d = getNowIST();
   const day = d.getDay();
   const diff = d.getDate() + (6 - day);
   return new Date(d.setDate(diff));
@@ -421,30 +465,61 @@ function renderTimeSlots() {
     return currentBooking.activePeriodFilter === "all" || s.period === currentBooking.activePeriodFilter;
   });
 
-  const freeCount = filtered.filter(s => !bookedTimes.includes(s.time)).length;
+  const availableSlots = filtered.filter(s => {
+    const isPassed = isTimePassedForDate(s.time, currentBooking.dateKey);
+    const isBooked = bookedTimes.includes(s.time);
+    return !isPassed && !isBooked;
+  });
+
+  const freeCount = availableSlots.length;
   if (hintEl) {
-    hintEl.textContent = `${freeCount} available • Locked once booked`;
+    if (freeCount > 0) {
+      hintEl.innerHTML = `<span style="color: #10b981; font-weight: 600;">${freeCount} available</span> • Locked once booked`;
+    } else if (currentBooking.dateKey === getTodayKey()) {
+      hintEl.innerHTML = `<span style="color: #f87171; font-weight: 600;"><i class="fa-solid fa-moon"></i> All slots for today have ended • Pick Tomorrow</span>`;
+    } else {
+      hintEl.innerHTML = `<span style="color: #f87171; font-weight: 600;">Fully Booked on this date</span>`;
+    }
   }
 
-  // If current selected time is booked, pick the first available one
-  if (bookedTimes.includes(currentBooking.timeSlot)) {
-    const nextFree = TIME_SLOTS.find(s => !bookedTimes.includes(s.time));
+  // If current selected time is passed or booked, pick the first valid upcoming slot
+  const isCurrentPassed = isTimePassedForDate(currentBooking.timeSlot, currentBooking.dateKey);
+  const isCurrentBooked = bookedTimes.includes(currentBooking.timeSlot);
+  if (isCurrentPassed || isCurrentBooked || !currentBooking.timeSlot) {
+    const nextFree = TIME_SLOTS.find(s => !isTimePassedForDate(s.time, currentBooking.dateKey) && !bookedTimes.includes(s.time));
     if (nextFree) {
       currentBooking.timeSlot = nextFree.time;
+    } else {
+      currentBooking.timeSlot = "";
     }
   }
 
   container.innerHTML = filtered.map(slot => {
-    const isBooked = bookedTimes.includes(slot.time);
-    const isSelected = !isBooked && slot.time === currentBooking.timeSlot;
+    const isPassed = isTimePassedForDate(slot.time, currentBooking.dateKey);
+    const isBooked = !isPassed && bookedTimes.includes(slot.time);
+    const isSelected = !isPassed && !isBooked && slot.time === currentBooking.timeSlot;
+
+    let slotClass = "available";
+    let statusMarkup = '<i class="fa-solid fa-circle-check"></i> Free';
+    let title = "Available for reservation";
+
+    if (isPassed) {
+      slotClass = "passed";
+      statusMarkup = '<i class="fa-regular fa-clock"></i> Passed';
+      title = "This time slot has already passed for today";
+    } else if (isBooked) {
+      slotClass = "booked";
+      statusMarkup = '<i class="fa-solid fa-lock"></i> Booked';
+      title = "Already reserved — locked for other guests";
+    }
 
     return `
-      <div class="time-slot ${isBooked ? 'booked' : 'available'} ${isSelected ? 'selected' : ''}" 
+      <div class="time-slot ${slotClass} ${isSelected ? 'selected' : ''}" 
            data-slot-time="${slot.time}"
-           title="${isBooked ? 'Already reserved — locked for other guests' : 'Available for reservation'}">
+           title="${title}">
         <span class="slot-time">${slot.time}</span>
-        <span class="slot-status ${isBooked ? 'booked' : 'available'}">
-          ${isBooked ? '<i class="fa-solid fa-lock"></i> Booked' : '<i class="fa-solid fa-circle-check"></i> Free'}
+        <span class="slot-status ${slotClass}">
+          ${statusMarkup}
         </span>
       </div>
     `;
@@ -466,6 +541,14 @@ function renderTimeSlots() {
       slotEl.classList.add("selected");
       currentBooking.timeSlot = slotEl.getAttribute("data-slot-time");
       updateSummaryPreview();
+    });
+  });
+
+  // Passed slot clicks (Notice explaining slot has passed for today)
+  container.querySelectorAll(".time-slot.passed").forEach(slotEl => {
+    slotEl.addEventListener("click", () => {
+      const time = slotEl.getAttribute("data-slot-time");
+      alert(`The ${time} slot has already passed for today.\n\nPlease choose an upcoming time slot, or select Tomorrow to book freely!`);
     });
   });
 
@@ -499,12 +582,21 @@ function setupCustomTimePicker() {
     // Validate cafe hours 11:00 AM to 11:00 PM
     if (militaryH < 11 || militaryH > 23) {
       alert("Please choose a time during cafe hours: 11:00 AM to 11:00 PM.");
+      picker.value = "";
+      return;
+    }
+
+    // Validate if time has already passed for today
+    if (isTimePassedForDate(formatted, currentBooking.dateKey)) {
+      alert(`The time "${formatted}" has already passed for today.\n\nPlease select an upcoming time or choose Tomorrow!`);
+      picker.value = "";
       return;
     }
 
     // Check if slot is already booked
     if (isSlotBooked(currentBooking.seating.id, currentBooking.dateKey, formatted)) {
       alert(`${formatted} is already booked for ${currentBooking.seating.name} on ${currentBooking.formattedDate}. Please choose another time.`);
+      picker.value = "";
       return;
     }
 
@@ -603,6 +695,13 @@ function handleBookingSubmit() {
   if (!phoneInput || !phoneInput.value.trim() || phoneInput.value.trim().length < 8) {
     alert("Please enter a valid phone number for confirmation.");
     if (phoneInput) phoneInput.focus();
+    return;
+  }
+
+  // Validate if time slot has already passed
+  if (!currentBooking.timeSlot || isTimePassedForDate(currentBooking.timeSlot, currentBooking.dateKey)) {
+    alert(`The time slot "${currentBooking.timeSlot || 'selected'}" has already passed for ${currentBooking.formattedDate}.\n\nPlease choose an upcoming time slot, or select Tomorrow!`);
+    renderTimeSlots();
     return;
   }
 
