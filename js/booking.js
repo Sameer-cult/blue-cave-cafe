@@ -266,9 +266,7 @@ function renderFloorPlan() {
         <div>
           <div class="booth-badge-row">
             <span class="booth-badge ${seat.badgeClass}">★ ${seat.badge}</span>
-            <span class="booth-type-tag" style="color: ${bookedCount > 0 ? '#f87171' : '#34d399'};">
-              ${bookedCount > 0 ? `🔴 ${bookedCount} Booked` : `🟢 All Free`}
-            </span>
+            <span class="booth-type-tag">${seat.category}</span>
           </div>
           <h4 class="booth-name">${seat.name}</h4>
           <p class="booth-desc">${seat.desc}</p>
@@ -413,17 +411,20 @@ function getNextWeekend() {
 function renderTimeSlots() {
   const container = document.getElementById("slots-grid");
   const tabBtns = document.querySelectorAll(".slot-cat-btn");
+  const hintEl = document.getElementById("slot-availability-hint");
   if (!container) return;
 
   const bookedList = getBookedSlotsFor(currentBooking.seating.id, currentBooking.dateKey);
   const bookedTimes = bookedList.map(b => b.time);
 
-  // Update Schedule Summary Box
-  updateScheduleSummaryCard(bookedList);
-
   const filtered = TIME_SLOTS.filter(s => {
     return currentBooking.activePeriodFilter === "all" || s.period === currentBooking.activePeriodFilter;
   });
+
+  const freeCount = filtered.filter(s => !bookedTimes.includes(s.time)).length;
+  if (hintEl) {
+    hintEl.textContent = `${freeCount} available • Locked once booked`;
+  }
 
   // If current selected time is booked, pick the first available one
   if (bookedTimes.includes(currentBooking.timeSlot)) {
@@ -440,7 +441,7 @@ function renderTimeSlots() {
     return `
       <div class="time-slot ${isBooked ? 'booked' : 'available'} ${isSelected ? 'selected' : ''}" 
            data-slot-time="${slot.time}"
-           title="${isBooked ? 'Already reserved for this date' : 'Available for reservation'}">
+           title="${isBooked ? 'Already reserved — locked for other guests' : 'Available for reservation'}">
         <span class="slot-time">${slot.time}</span>
         <span class="slot-status ${isBooked ? 'booked' : 'available'}">
           ${isBooked ? '<i class="fa-solid fa-lock"></i> Booked' : '<i class="fa-solid fa-circle-check"></i> Free'}
@@ -458,7 +459,7 @@ function renderTimeSlots() {
     };
   });
 
-  // Slot clicks
+  // Available slot clicks
   container.querySelectorAll(".time-slot.available").forEach(slotEl => {
     slotEl.addEventListener("click", () => {
       container.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
@@ -467,57 +468,14 @@ function renderTimeSlots() {
       updateSummaryPreview();
     });
   });
-}
 
-function updateScheduleSummaryCard(bookedList) {
-  const nameEl = document.getElementById("schedule-seating-name");
-  const dateEl = document.getElementById("schedule-date-str");
-  const countBadge = document.getElementById("schedule-count-badge");
-  const contentEl = document.getElementById("schedule-summary-content");
-
-  if (nameEl) nameEl.textContent = currentBooking.seating.name;
-  if (dateEl) dateEl.textContent = currentBooking.formattedDate;
-
-  if (!contentEl) return;
-
-  const totalSlots = TIME_SLOTS.length;
-  const bookedCount = bookedList.length;
-  const availableCount = totalSlots - bookedCount;
-
-  if (countBadge) {
-    if (bookedCount === 0) {
-      countBadge.textContent = "All 24 Slots Free";
-      countBadge.style.color = "#34d399";
-      countBadge.style.borderColor = "rgba(16, 185, 129, 0.35)";
-    } else {
-      countBadge.textContent = `${bookedCount} Booked • ${availableCount} Free`;
-      countBadge.style.color = "#f87171";
-      countBadge.style.borderColor = "rgba(239, 68, 68, 0.35)";
-    }
-  }
-
-  if (bookedCount === 0) {
-    contentEl.innerHTML = `
-      <div class="chip-all-free">
-        <i class="fa-solid fa-circle-check"></i> 
-        All time slots are currently open and available for <b>${currentBooking.seating.name}</b> on this date! Pick any time below.
-      </div>
-    `;
-  } else {
-    const chipsHtml = bookedList.map(b => {
-      return `<span class="chip-booked"><i class="fa-solid fa-lock"></i> ${b.time} (Reserved)</span>`;
-    }).join(" ");
-
-    contentEl.innerHTML = `
-      <div class="booked-chips-wrap">
-        <span style="font-weight: 600; color: var(--text-primary);">Booked on this date:</span>
-        ${chipsHtml}
-        <span class="chip-free-note">
-          <i class="fa-solid fa-check"></i> All other ${availableCount} slots are free!
-        </span>
-      </div>
-    `;
-  }
+  // Booked slot clicks (Friendly notice explaining double-booking prevention)
+  container.querySelectorAll(".time-slot.booked").forEach(slotEl => {
+    slotEl.addEventListener("click", () => {
+      const time = slotEl.getAttribute("data-slot-time");
+      alert(`Sorry, ${time} is already booked for ${currentBooking.seating.name} on ${currentBooking.formattedDate}.\n\nTo prevent conflicts, no one can book this cabin at the same time. Please select any open slot!`);
+    });
+  });
 }
 
 // -------------------------------------------------------------

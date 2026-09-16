@@ -299,25 +299,17 @@
                 </div>
               </div>
 
-              <!-- Live Booked vs Available Schedule Summary -->
-              <div class="schedule-summary-card" id="schedule-summary-card">
-                <div class="schedule-summary-header">
-                  <div class="schedule-summary-title">
-                    <i class="fa-solid fa-calendar-check"></i>
-                    <span>Schedule for <b id="schedule-seating-name">Cabin A</b> on <b id="schedule-date-str">Today</b></span>
-                  </div>
-                  <span class="schedule-badge" id="schedule-count-badge">Checking...</span>
-                </div>
-                <div class="schedule-summary-content" id="schedule-summary-content">
-                  <!-- Dynamically lists currently booked slots -->
-                </div>
-              </div>
-
-              <!-- Time Slots Grid (Freely Choose 11:00 AM to 11:00 PM) -->
+              <!-- Time Slots Grid (11:00 AM to 11:00 PM) -->
               <div class="booking-field-group">
                 <div class="field-label">
-                  <span><i class="fa-regular fa-clock"></i> Select Time Slot (11 AM – 11 PM)</span>
-                  <div class="slot-category-tabs">
+                  <span><i class="fa-regular fa-clock"></i> Select Time Slot</span>
+                  <span class="field-label-hint" id="slot-availability-hint">11:00 AM – 11:00 PM</span>
+                </div>
+                <div class="slot-legend-bar">
+                  <span class="legend-item"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Available</span>
+                  <span class="legend-item"><i class="fa-solid fa-lock" style="color: #ef4444;"></i> Already Booked (Locked)</span>
+                </div>
+                <div class="slot-category-tabs">
                     <button type="button" class="slot-cat-btn active" data-period="all">All (11 AM–11 PM)</button>
                     <button type="button" class="slot-cat-btn" data-period="afternoon">Lunch</button>
                     <button type="button" class="slot-cat-btn" data-period="sunset">Evening</button>

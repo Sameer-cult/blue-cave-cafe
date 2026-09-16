@@ -27,6 +27,8 @@
   right: 0;
   height: 4px;
   background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
+}
+
 /* Cafe Operating Hours & Real-Time Status Banner */
 .cafe-hours-status-banner {
   display: flex;
@@ -526,6 +528,21 @@
 }
 
 /* Time Slot Tabs & Chips */
+.slot-legend-bar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.slot-legend-bar .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .slot-category-tabs {
   display: flex;
   gap: 8px;
