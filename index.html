@@ -19,6 +19,8 @@
   <link rel="stylesheet" href="css/booking.css">
 </head>
 <body>
+  <!-- Ambient Particle Canvas -->
+  <canvas id="ambient-canvas"></canvas>
 
   <!-- Top Announcement & Kanpur Live Status Bar -->
   <aside class="top-bar">
@@ -717,14 +719,44 @@
   </div>
 
   <!-- Floating Table Feast Wishlist Bar -->
-  <div class="feast-summary-bar" id="feast-summary-bar">
+  <div class="feast-summary-bar" id="feast-summary-bar" onclick="toggleCartDrawer()">
     <div class="feast-info">
       <h4 id="feast-item-count">0 items in Feast Wishlist</h4>
-      <p id="feast-subtitle">Pre-selected for your table</p>
+      <p id="feast-subtitle">Tap to view your order</p>
     </div>
-    <a href="#booking" class="btn btn-primary btn-sm">
-      <i class="fa-solid fa-utensils"></i> Attach to Table Booking
-    </a>
+    <button class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-cart-shopping"></i> View Cart
+    </button>
+  </div>
+
+  <!-- Cart Drawer Overlay -->
+  <div class="cart-drawer-overlay" id="cart-drawer-overlay" onclick="toggleCartDrawer()"></div>
+
+  <!-- Cart Drawer -->
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-drawer-header">
+      <h3>Your Table Order</h3>
+      <button class="cart-close-btn" onclick="toggleCartDrawer()">✕</button>
+    </div>
+    <div class="cart-drawer-body" id="cart-drawer-items">
+      <!-- Items dynamically injected here -->
+      <div class="cart-empty-state">
+        <i class="fa-solid fa-cart-arrow-down" style="font-size: 3rem; color: var(--border-glow); margin-bottom: 1rem;"></i>
+        <p>Your feast wishlist is empty.</p>
+      </div>
+    </div>
+    <div class="cart-drawer-footer">
+      <div class="cart-total-row">
+        <span>Subtotal</span>
+        <strong id="cart-subtotal">₹0</strong>
+      </div>
+      <a href="#booking" class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: 10px;" onclick="toggleCartDrawer()">
+        <i class="fa-solid fa-utensils"></i> Attach to Table Booking
+      </a>
+      <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="alert('Proceeding to checkout/payment gateway integration pending.')">
+        <i class="fa-solid fa-credit-card"></i> Pay & Order Now
+      </button>
+    </div>
   </div>
 
   <!-- Holographic Digital Booking Pass Modal -->

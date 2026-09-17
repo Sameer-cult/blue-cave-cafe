@@ -167,7 +167,7 @@ const MENU_ITEMS = [
 ];
 
 // Table Feast Wishlist State
-let selectedFeast = {};
+let selectedFeast = [];
 
 document.addEventListener("DOMContentLoaded", () => {
   initMoodSwitcher();
@@ -177,7 +177,72 @@ document.addEventListener("DOMContentLoaded", () => {
   init3DTilt();
   initMobileMenu();
   initQuickViewModal();
+  initAmbientCanvas();
 });
+
+// 0. Ambient Canvas (Gentle Particles/Steam Drift)
+function initAmbientCanvas() {
+  const canvas = document.getElementById("ambient-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  let width, height;
+  let particles = [];
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+
+  // Create initial particles
+  const numParticles = window.innerWidth < 768 ? 20 : 40; // less on mobile
+  for (let i = 0; i < numParticles; i++) {
+    particles.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: Math.random() * 3 + 1,
+      speedY: (Math.random() * 0.5 + 0.1) * -1, // drift up
+      speedX: (Math.random() * 0.4 - 0.2), // slight horizontal drift
+      opacity: Math.random() * 0.4 + 0.1
+    });
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+
+    // Get current theme color for particles
+    const theme = document.documentElement.getAttribute("data-theme");
+    let r, g, b;
+    if (theme === "amber") { r=255; g=183; b=3; }
+    else if (theme === "violet") { r=247; g=37; b=133; }
+    else { r=0; g=212; b=255; } // default blue
+
+    particles.forEach(p => {
+      p.y += p.speedY;
+      p.x += p.speedX;
+
+      // Reset if off screen
+      if (p.y < -10) {
+        p.y = height + 10;
+        p.x = Math.random() * width;
+      }
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${p.opacity})`;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+}
 
 // 1. Interactive Mood Lighting Switcher
 function initMoodSwitcher() {
@@ -237,11 +302,16 @@ function initLiveKanpurStatus() {
 }
 
 // 3. Render Menu Items
-function renderMenu(category = "all") {
+function renderMenu(category = "all", skipAnimation = false) {
   const container = document.getElementById("menu-grid");
   if (!container) return;
 
   const items = category === "all" ? MENU_ITEMS : MENU_ITEMS.filter(item => item.category === category);
+
+  if (skipAnimation) {
+    renderCards(container, items, false);
+    return;
+  }
 
   // Apply out animation first
   const existingCards = container.querySelectorAll('.menu-card');
@@ -256,11 +326,11 @@ function renderMenu(category = "all") {
   }
 }
 
-function renderCards(container, items) {
+function renderCards(container, items, animate = true) {
   container.innerHTML = items.map(item => {
-    const qty = selectedFeast[item.id] || 0;
+    const qty = selectedFeast.filter(f => f.id === item.id).length;
     return `
-      <div class="menu-card tilt-card filtering-in" data-item-id="${item.id}">
+      <div class="menu-card tilt-card ${animate ? 'filtering-in' : ''}" data-item-id="${item.id}">
         <div class="menu-card-top">
           <span class="diet-tag" title="100% Vegetarian"></span>
           ${item.isPopular ? `<span class="popular-badge">★ ${item.tag}</span>` : `<span class="sub-tag">${item.tag}</span>`}
@@ -283,11 +353,13 @@ function renderCards(container, items) {
   // Re-apply 3D tilt
   init3DTilt();
 
-  // Remove filtering-in class after animation
-  setTimeout(() => {
-    const cards = container.querySelectorAll('.menu-card');
-    cards.forEach(card => card.classList.remove('filtering-in'));
-  }, 400);
+  if (animate) {
+    // Remove filtering-in class after animation
+    setTimeout(() => {
+      const cards = container.querySelectorAll('.menu-card');
+      cards.forEach(card => card.classList.remove('filtering-in'));
+    }, 400);
+  }
 }
 
 // 4. Menu Tabs Filter
@@ -303,35 +375,34 @@ function initMenuTabs() {
 }
 
 // 5. Build Your Cave Feast Wishlist
-window.addToFeast = function(itemId, event) {
+window.addToFeast = function(itemId, event, customOptions = null, customPrice = null) {
   if (event) {
     event.stopPropagation(); // prevent opening modal if clicking +
   }
 
-  // Here we are simply adding the base item, ignoring custom options for simplicity
-  // since the backend and wishlist structure only supports base item IDs.
-  selectedFeast[itemId] = (selectedFeast[itemId] || 0) + 1;
-
   const item = MENU_ITEMS.find(m => m.id === itemId);
-  if (item) {
-    showToast(`${item.name} added to wishlist!`);
-  }
+  if (!item) return;
+
+  const newItem = {
+    id: itemId,
+    name: item.name,
+    basePrice: item.price,
+    finalPrice: customPrice !== null ? customPrice : item.price,
+    options: customOptions || {}
+  };
+
+  selectedFeast.push(newItem);
+  showToast(`${item.name} added to wishlist!`);
 
   updateFeastBar();
-  renderMenu(document.querySelector(".menu-tab.active")?.getAttribute("data-category") || "all");
+  renderMenu(document.querySelector(".menu-tab.active")?.getAttribute("data-category") || "all", true);
 };
 
 function updateFeastBar() {
   const bar = document.getElementById("feast-summary-bar");
   const countEl = document.getElementById("feast-item-count");
 
-  let totalCount = 0;
-  Object.entries(selectedFeast).forEach(([id, qty]) => {
-    const item = MENU_ITEMS.find(m => m.id === id);
-    if (item && qty > 0) {
-      totalCount += qty;
-    }
-  });
+  const totalCount = selectedFeast.length;
 
   if (bar && countEl) {
     if (totalCount > 0) {
@@ -346,6 +417,68 @@ function updateFeastBar() {
       bar.classList.remove("active");
     }
   }
+
+  updateCartDrawerUI();
+}
+
+// Cart Drawer Logic
+window.toggleCartDrawer = function() {
+  const drawer = document.getElementById('cart-drawer');
+  const overlay = document.getElementById('cart-drawer-overlay');
+  if (drawer && overlay) {
+    drawer.classList.toggle('active');
+    overlay.classList.toggle('active');
+    if (drawer.classList.contains('active')) {
+      updateCartDrawerUI();
+    }
+  }
+};
+
+window.removeFromCart = function(index) {
+  selectedFeast.splice(index, 1);
+  updateFeastBar();
+  renderMenu(document.querySelector(".menu-tab.active")?.getAttribute("data-category") || "all", true);
+};
+
+function updateCartDrawerUI() {
+  const itemsContainer = document.getElementById('cart-drawer-items');
+  const subtotalEl = document.getElementById('cart-subtotal');
+
+  if (!itemsContainer || !subtotalEl) return;
+
+  if (selectedFeast.length === 0) {
+    itemsContainer.innerHTML = `
+      <div class="cart-empty-state">
+        <i class="fa-solid fa-cart-arrow-down" style="font-size: 3rem; color: var(--border-glow); margin-bottom: 1rem;"></i>
+        <p>Your feast wishlist is empty.</p>
+      </div>
+    `;
+    subtotalEl.textContent = '₹0';
+    return;
+  }
+
+  let subtotal = 0;
+  itemsContainer.innerHTML = selectedFeast.map((item, index) => {
+    subtotal += item.finalPrice;
+    const optsStr = Object.keys(item.options).length > 0
+      ? Object.entries(item.options).map(([k,v])=>v).join(', ')
+      : 'Standard';
+
+    return `
+      <div class="cart-item">
+        <div class="cart-item-info">
+          <h4>${item.name}</h4>
+          <span class="cart-item-opts">${optsStr}</span>
+        </div>
+        <div class="cart-item-price">
+          <span>₹${item.finalPrice}</span>
+          <button class="cart-close-btn" style="font-size: 0.9rem;" onclick="removeFromCart(${index})" title="Remove item">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  subtotalEl.textContent = `₹${subtotal}`;
 }
 
 // Toast Notifications
@@ -402,7 +535,19 @@ function initQuickViewModal() {
   if (addBtn) {
     addBtn.addEventListener('click', () => {
       if (currentModalItem) {
-        addToFeast(currentModalItem.id);
+        // Collect selected options
+        const customOptions = {};
+        const activeChips = document.querySelectorAll('.option-chip.active');
+        activeChips.forEach(chip => {
+          const group = chip.closest('.option-group');
+          if (group && group.style.display !== 'none') {
+             const groupName = group.querySelector('label').textContent;
+             customOptions[groupName] = chip.textContent.split(' (+')[0]; // Store base name
+          }
+        });
+
+        const finalPrice = currentModalPrice + modalOptionsCost;
+        addToFeast(currentModalItem.id, null, customOptions, finalPrice);
         modal.classList.remove('active');
       }
     });
@@ -470,11 +615,18 @@ function calculateModalPrice() {
 window.getSelectedFeastSummary = function() {
   let summary = [];
 
-  Object.entries(selectedFeast).forEach(([id, qty]) => {
-    const item = MENU_ITEMS.find(m => m.id === id);
-    if (item && qty > 0) {
-      summary.push(`• ${qty}x ${item.name}`);
-    }
+  // Group by exact item configuration to show quantities
+  const grouped = {};
+  selectedFeast.forEach(item => {
+    const optsStr = Object.keys(item.options).length > 0
+      ? ` (${Object.entries(item.options).map(([k,v])=>v).join(', ')})`
+      : '';
+    const key = `${item.name}${optsStr}`;
+    grouped[key] = (grouped[key] || 0) + 1;
+  });
+
+  Object.entries(grouped).forEach(([desc, qty]) => {
+    summary.push(`• ${qty}x ${desc}`);
   });
 
   if (summary.length === 0) return "";

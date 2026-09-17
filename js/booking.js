@@ -497,7 +497,11 @@ function renderFloorPlan() {
     return `
       <div class="floor-booth ${seat.type === 'cabin' ? 'is-cabin' : 'is-table'} ${isSelected ? 'selected' : ''}" 
            data-seat-id="${seat.id}">
-        <div>
+        <div class="booth-image-preview">
+          <img src="${seat.image || 'assets/images/hero_cave_ambiance.jpg'}" alt="${seat.name}">
+          ${isSelected ? '<div class="booth-selected-overlay"><i class="fa-solid fa-check"></i></div>' : ''}
+        </div>
+        <div class="booth-content">
           <div class="booth-badge-row">
             <span class="booth-badge ${seat.badgeClass}">★ ${seat.badge}</span>
             <span class="booth-type-tag">${seat.category}</span>
