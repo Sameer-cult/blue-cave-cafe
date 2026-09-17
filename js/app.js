@@ -13,7 +13,8 @@ const MENU_ITEMS = [
     desc: "Creamy garlic butter blend, Italian herbs, sautéed sweet corn & mushrooms with aged parmesan.",
     isVeg: true,
     isPopular: true,
-    tag: "Signature Bestseller"
+    tag: "Signature Bestseller",
+    price: 240
   },
   {
     id: "m2",
@@ -22,7 +23,8 @@ const MENU_ITEMS = [
     desc: "Tangy slow-cooked San Marzano style tomato salsa, spicy chili flakes, bell peppers & black olives.",
     isVeg: true,
     isPopular: false,
-    tag: "Spicy Italian"
+    tag: "Spicy Italian",
+    price: 220
   },
   {
     id: "m3",
@@ -31,7 +33,8 @@ const MENU_ITEMS = [
     desc: "The ultimate harmony of rich alfredo cheese & zesty tomato marinara topped with melting mozzarella.",
     isVeg: true,
     isPopular: true,
-    tag: "Chef Special"
+    tag: "Chef Special",
+    price: 260
   },
 
   // Pizzas
@@ -42,7 +45,8 @@ const MENU_ITEMS = [
     desc: "Charred marinated paneer, diced capsicum, red onions, mozzarella overload & tandoori drizzle.",
     isVeg: true,
     isPopular: true,
-    tag: "Popular Choice"
+    tag: "Popular Choice",
+    price: 350
   },
   {
     id: "m5",
@@ -51,7 +55,8 @@ const MENU_ITEMS = [
     desc: "Thin-crust stone baked sourdough base, rich tomato concasse, melted mozzarella & fresh basil.",
     isVeg: true,
     isPopular: false,
-    tag: "Authentic"
+    tag: "Authentic",
+    price: 280
   },
   {
     id: "m6",
@@ -60,7 +65,8 @@ const MENU_ITEMS = [
     desc: "Golden corn, tender mushrooms, green peppers, black olives, jalapenos and extra cheese blend.",
     isVeg: true,
     isPopular: true,
-    tag: "Loaded"
+    tag: "Loaded",
+    price: 320
   },
 
   // Shakes & Blends
@@ -71,7 +77,8 @@ const MENU_ITEMS = [
     desc: "Loaded chocolate shake layered with crushed KitKat bars, chocolate swirl, vanilla cream & chocolate wafer.",
     isVeg: true,
     isPopular: true,
-    tag: "Must Try"
+    tag: "Must Try",
+    price: 220
   },
   {
     id: "m8",
@@ -80,7 +87,8 @@ const MENU_ITEMS = [
     desc: "Dark chocolate fudge blended with crunchy Oreos, topped with whipped cream and cookie crunch.",
     isVeg: true,
     isPopular: false,
-    tag: "Chocolate Lover"
+    tag: "Chocolate Lover",
+    price: 190
   },
   {
     id: "m9",
@@ -89,7 +97,8 @@ const MENU_ITEMS = [
     desc: "Fresh pulled double-shot espresso blended with chilled milk and topped with creamy vanilla ice cream.",
     isVeg: true,
     isPopular: true,
-    tag: "Crowd Favorite"
+    tag: "Crowd Favorite",
+    price: 160
   },
 
   // Mocktails & Coolers
@@ -100,7 +109,8 @@ const MENU_ITEMS = [
     desc: "Signature electric blue refresher with lemon zest, fresh mint leaves, cane sugar & sparkling soda.",
     isVeg: true,
     isPopular: true,
-    tag: "Cafe Signature"
+    tag: "Cafe Signature",
+    price: 150
   },
   {
     id: "m11",
@@ -109,7 +119,8 @@ const MENU_ITEMS = [
     desc: "Muddled fresh garden mint, juicy lime wedges, brown sugar syrup and ice cold effervescent fizz.",
     isVeg: true,
     isPopular: false,
-    tag: "Refreshing"
+    tag: "Refreshing",
+    price: 130
   },
   {
     id: "m12",
@@ -118,7 +129,8 @@ const MENU_ITEMS = [
     desc: "Tart green apple essence, tangy citrus squeeze and fizzy sparkling soda with crushed ice.",
     isVeg: true,
     isPopular: false,
-    tag: "Tangy Chill"
+    tag: "Tangy Chill",
+    price: 140
   },
 
   // Quick Bites & Starters
@@ -129,7 +141,8 @@ const MENU_ITEMS = [
     desc: "Golden crispy skin-on potato fries dusted in spicy peri-peri seasoning and drenched in melted cheese sauce.",
     isVeg: true,
     isPopular: true,
-    tag: "Bestseller"
+    tag: "Bestseller",
+    price: 180
   },
   {
     id: "m14",
@@ -138,7 +151,8 @@ const MENU_ITEMS = [
     desc: "Crispy coated paneer patty, chipotle aioli, iceberg lettuce, tomatoes & onions in a toasted brioche bun.",
     isVeg: true,
     isPopular: false,
-    tag: "Hearty Snack"
+    tag: "Hearty Snack",
+    price: 160
   },
   {
     id: "m15",
@@ -147,7 +161,8 @@ const MENU_ITEMS = [
     desc: "Crunchy corn tortilla chips served with spicy salsa dip, sour cream and melted cheddar cheese drizzle.",
     isVeg: true,
     isPopular: true,
-    tag: "Perfect with Games"
+    tag: "Perfect with Games",
+    price: 210
   }
 ];
 
@@ -161,6 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initMenuTabs();
   init3DTilt();
   initMobileMenu();
+  initQuickViewModal();
 });
 
 // 1. Interactive Mood Lighting Switcher
@@ -227,21 +243,36 @@ function renderMenu(category = "all") {
 
   const items = category === "all" ? MENU_ITEMS : MENU_ITEMS.filter(item => item.category === category);
 
+  // Apply out animation first
+  const existingCards = container.querySelectorAll('.menu-card');
+  if (existingCards.length > 0) {
+    existingCards.forEach(card => card.classList.add('filtering-out'));
+
+    setTimeout(() => {
+      renderCards(container, items);
+    }, 300); // match transition duration
+  } else {
+    renderCards(container, items);
+  }
+}
+
+function renderCards(container, items) {
   container.innerHTML = items.map(item => {
     const qty = selectedFeast[item.id] || 0;
     return `
-      <div class="menu-card tilt-card" data-item-id="${item.id}">
+      <div class="menu-card tilt-card filtering-in" data-item-id="${item.id}">
         <div class="menu-card-top">
           <span class="diet-tag" title="100% Vegetarian"></span>
           ${item.isPopular ? `<span class="popular-badge">★ ${item.tag}</span>` : `<span class="sub-tag">${item.tag}</span>`}
         </div>
-        <div>
+        <div class="menu-item-content" onclick="openQuickView('${item.id}')" style="cursor: pointer; flex: 1;">
           <h4 class="menu-item-title">${item.name}</h4>
           <p class="menu-item-desc">${item.desc}</p>
+          <p class="menu-item-price" style="font-weight: 700; color: var(--accent-primary); margin-bottom: 10px;">₹${item.price}</p>
         </div>
         <div class="menu-card-bottom">
           <span class="menu-item-badge"><i class="fa-solid fa-utensils"></i> Add to Table</span>
-          <button class="add-feast-btn" onclick="addToFeast('${item.id}')" title="Add to table wishlist">
+          <button class="add-feast-btn" onclick="addToFeast('${item.id}', event)" title="Add to table wishlist">
             ${qty > 0 ? `<b>${qty}</b>` : `+`}
           </button>
         </div>
@@ -251,6 +282,12 @@ function renderMenu(category = "all") {
 
   // Re-apply 3D tilt
   init3DTilt();
+
+  // Remove filtering-in class after animation
+  setTimeout(() => {
+    const cards = container.querySelectorAll('.menu-card');
+    cards.forEach(card => card.classList.remove('filtering-in'));
+  }, 400);
 }
 
 // 4. Menu Tabs Filter
@@ -266,8 +303,20 @@ function initMenuTabs() {
 }
 
 // 5. Build Your Cave Feast Wishlist
-window.addToFeast = function(itemId) {
+window.addToFeast = function(itemId, event) {
+  if (event) {
+    event.stopPropagation(); // prevent opening modal if clicking +
+  }
+
+  // Here we are simply adding the base item, ignoring custom options for simplicity
+  // since the backend and wishlist structure only supports base item IDs.
   selectedFeast[itemId] = (selectedFeast[itemId] || 0) + 1;
+
+  const item = MENU_ITEMS.find(m => m.id === itemId);
+  if (item) {
+    showToast(`${item.name} added to wishlist!`);
+  }
+
   updateFeastBar();
   renderMenu(document.querySelector(".menu-tab.active")?.getAttribute("data-category") || "all");
 };
@@ -288,10 +337,133 @@ function updateFeastBar() {
     if (totalCount > 0) {
       bar.classList.add("active");
       countEl.textContent = `${totalCount} item${totalCount > 1 ? 's' : ''} in Feast Wishlist`;
+
+      // Trigger bounce animation
+      bar.classList.remove("bounce");
+      void bar.offsetWidth; // Trigger reflow to restart animation
+      bar.classList.add("bounce");
     } else {
       bar.classList.remove("active");
     }
   }
+}
+
+// Toast Notifications
+function showToast(message, icon = 'fa-check-circle') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+
+  container.appendChild(toast);
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.classList.add('hide');
+    setTimeout(() => {
+      toast.remove();
+    }, 300); // Wait for transition
+  }, 3000);
+}
+
+// Quick View Modal Logic
+let currentModalItem = null;
+let currentModalPrice = 0;
+let modalOptionsCost = 0;
+
+function initQuickViewModal() {
+  const modal = document.getElementById('quick-view-modal');
+  const closeBtn = document.getElementById('modal-close-btn');
+  const addBtn = document.getElementById('modal-add-to-feast');
+  const optionChips = document.querySelectorAll('.option-chip');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      modal.classList.remove('active');
+    });
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+      }
+    });
+  }
+
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      if (currentModalItem) {
+        addToFeast(currentModalItem.id);
+        modal.classList.remove('active');
+      }
+    });
+  }
+
+  optionChips.forEach(chip => {
+    chip.addEventListener('click', (e) => {
+      const group = e.target.closest('.option-group');
+      const siblings = group.querySelectorAll('.option-chip');
+      siblings.forEach(s => s.classList.remove('active'));
+      e.target.classList.add('active');
+
+      calculateModalPrice();
+    });
+  });
+}
+
+window.openQuickView = function(itemId) {
+  const item = MENU_ITEMS.find(m => m.id === itemId);
+  if (!item) return;
+
+  currentModalItem = item;
+  currentModalPrice = item.price;
+
+  document.getElementById('modal-item-title').textContent = item.name;
+  document.getElementById('modal-item-desc').textContent = item.desc;
+
+  // Reset options to defaults
+  document.querySelectorAll('.option-group').forEach(group => {
+    const chips = group.querySelectorAll('.option-chip');
+    chips.forEach(c => c.classList.remove('active'));
+    if (chips.length > 0) chips[0].classList.add('active');
+  });
+
+  // Conditionally hide milk and sweetness for non-drinks
+  const isDrink = item.category === 'shakes' || item.category === 'drinks';
+  const milkGroup = document.getElementById('milk-options-group');
+  const sweetnessGroup = document.getElementById('sweetness-options-group');
+
+  if (milkGroup) milkGroup.style.display = isDrink ? 'block' : 'none';
+  if (sweetnessGroup) sweetnessGroup.style.display = isDrink ? 'block' : 'none';
+
+  calculateModalPrice();
+
+  const modal = document.getElementById('quick-view-modal');
+  modal.classList.add('active');
+};
+
+function calculateModalPrice() {
+  modalOptionsCost = 0;
+  const activeChips = document.querySelectorAll('.option-chip.active');
+  activeChips.forEach(chip => {
+    // Only add cost if the group is visible
+    const group = chip.closest('.option-group');
+    if (!group || group.style.display !== 'none') {
+      modalOptionsCost += parseInt(chip.getAttribute('data-price') || 0);
+    }
+  });
+
+  const totalPrice = currentModalPrice + modalOptionsCost;
+  document.getElementById('modal-total-price').textContent = `₹${totalPrice}`;
 }
 
 // Helper to export feast summary to booking WhatsApp message
