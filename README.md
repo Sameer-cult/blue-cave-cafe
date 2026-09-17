@@ -18,6 +18,8 @@ Official responsive website & interactive table/cabin booking system for **Blue 
 6. **"Build Your Cave Feast" Table Wishlist**: Interactive menu filter with 3D tilt cards and pre-selected dish wishlist.
 7. **Real Google Maps Photos**: Authentic photography extracted directly from their verified Google Maps listing and store presence.
 8. **Real-Time Kanpur Status**: Automatically detects if the cafe is currently open or closed based on Indian Standard Time (11:00 AM – 11:00 PM).
+9. **Anti-Spam Rate Limiting**: Max 3 bookings per device/IP with 5-hour cooldown protection.
+10. **Information & Lifestyle Guides**: Dedicated About, Kanpur Stories, and Guidelines pages.
 
 ---
 
